@@ -96,6 +96,15 @@ caption { text-align: left; font-weight: 600; margin-bottom: .5rem; }
   <div class="card savings"><div>Savings</div><div class="value">{{ euro .Summary.Savings }}</div></div>
 </div>
 
+{{ if gt .Summary.Averages.Months 0 }}
+<h2>Monthly Average <small>(over {{ .Summary.Averages.Months }} months)</small></h2>
+<div class="cards">
+  <div class="card"><div>Avg Income / mo</div><div class="value">{{ euro .Summary.Averages.Income }}</div></div>
+  <div class="card"><div>Avg Expenses / mo</div><div class="value">{{ euro .Summary.Averages.Expenses }}</div></div>
+  <div class="card savings"><div>Avg Savings / mo</div><div class="value">{{ euro .Summary.Averages.Savings }}</div></div>
+</div>
+{{ end }}
+
 {{ if .Summary.ByMonth }}
 <table>
   <caption>Monthly Breakdown</caption>
