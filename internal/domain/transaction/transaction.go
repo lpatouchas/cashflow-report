@@ -60,8 +60,8 @@ func FilterTransfers(txns []Transaction) []Transaction {
 	return kept
 }
 
-// Summarize aggregates transactions into totals and a chronological
-// per-month breakdown. Debits are expenses; credits are income.
+// Summarize aggregates transactions into totals and a per-month breakdown
+// ordered newest month first. Debits are expenses; credits are income.
 func Summarize(txns []Transaction) Summary {
 	type key struct {
 		year  int
@@ -105,9 +105,9 @@ func Summarize(txns []Transaction) Summary {
 	}
 	sort.Slice(s.ByMonth, func(i, j int) bool {
 		if s.ByMonth[i].Year != s.ByMonth[j].Year {
-			return s.ByMonth[i].Year < s.ByMonth[j].Year
+			return s.ByMonth[i].Year > s.ByMonth[j].Year
 		}
-		return s.ByMonth[i].Month < s.ByMonth[j].Month
+		return s.ByMonth[i].Month > s.ByMonth[j].Month
 	})
 
 	if len(txns) > 0 {
