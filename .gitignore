@@ -1,0 +1,9 @@
+# Generated report
+/report.html
+
+# Dropped bank exports (user data — never commit)
+/data/*.csv
+
+# Go build artifacts
+/personal-finance
+*.out
