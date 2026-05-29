@@ -103,6 +103,27 @@ func TestRender(t *testing.T) {
 		require.Contains(t, content, "Avg Income / mo")
 		require.Contains(t, content, "Avg Expenses / mo")
 		require.Contains(t, content, "Avg Savings / mo")
+		require.Contains(t, content, "€600,00")  // avg expenses, euro-formatted
+	})
+
+	t.Run("uses singular month wording for a single month", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome: 1000, Savings: 1000,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.May, Income: 1000, Savings: 1000},
+			},
+			Averages: transaction.MonthlyAverages{Months: 1, Income: 1000, Savings: 1000},
+		}
+
+		err := New(out).Render(ctx, summary)
+		require.NoError(t, err)
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		require.Contains(t, string(data), "over 1 month)")
 	})
 
 	t.Run("omits average cards when there are no transactions", func(t *testing.T) {
