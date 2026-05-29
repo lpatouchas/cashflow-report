@@ -1,6 +1,9 @@
 package transaction
 
-import "time"
+import (
+	"sort"
+	"time"
+)
 
 // Transaction is a single bank movement loaded from a CSV export.
 // Amount is always positive; direction is carried by IsDebit.
@@ -45,4 +48,49 @@ func FilterTransfers(txns []Transaction) []Transaction {
 		}
 	}
 	return kept
+}
+
+// Summarize aggregates transactions into totals and a chronological
+// per-month breakdown. Debits are expenses; credits are income.
+func Summarize(txns []Transaction) Summary {
+	type key struct {
+		year  int
+		month time.Month
+	}
+	months := make(map[key]*MonthlyBreakdown)
+
+	var s Summary
+	for _, t := range txns {
+		if t.IsDebit {
+			s.TotalExpenses += t.Amount
+		} else {
+			s.TotalIncome += t.Amount
+		}
+
+		k := key{t.Date.Year(), t.Date.Month()}
+		mb := months[k]
+		if mb == nil {
+			mb = &MonthlyBreakdown{Year: k.year, Month: k.month}
+			months[k] = mb
+		}
+		if t.IsDebit {
+			mb.Expenses += t.Amount
+		} else {
+			mb.Income += t.Amount
+		}
+	}
+	s.Savings = s.TotalIncome - s.TotalExpenses
+
+	for _, mb := range months {
+		mb.Savings = mb.Income - mb.Expenses
+		s.ByMonth = append(s.ByMonth, *mb)
+	}
+	sort.Slice(s.ByMonth, func(i, j int) bool {
+		if s.ByMonth[i].Year != s.ByMonth[j].Year {
+			return s.ByMonth[i].Year < s.ByMonth[j].Year
+		}
+		return s.ByMonth[i].Month < s.ByMonth[j].Month
+	})
+
+	return s
 }
