@@ -22,6 +22,16 @@ type Summary struct {
 	TotalExpenses float64
 	Savings       float64 // TotalIncome - TotalExpenses
 	ByMonth       []MonthlyBreakdown
+	Averages      MonthlyAverages
+}
+
+// MonthlyAverages holds per-month averages over the report's calendar span
+// (earliest to latest transaction month, inclusive; empty months count as zero).
+type MonthlyAverages struct {
+	Months   int // calendar-span divisor; 0 when there are no transactions
+	Income   float64
+	Expenses float64
+	Savings  float64
 }
 
 // MonthlyBreakdown holds income/expenses/savings for a single calendar month.
@@ -60,11 +70,19 @@ func Summarize(txns []Transaction) Summary {
 	months := make(map[key]*MonthlyBreakdown)
 
 	var s Summary
-	for _, t := range txns {
+	var earliest, latest time.Time
+	for i, t := range txns {
 		if t.IsDebit {
 			s.TotalExpenses += t.Amount
 		} else {
 			s.TotalIncome += t.Amount
+		}
+
+		if i == 0 || t.Date.Before(earliest) {
+			earliest = t.Date
+		}
+		if i == 0 || t.Date.After(latest) {
+			latest = t.Date
 		}
 
 		k := key{t.Date.Year(), t.Date.Month()}
@@ -91,6 +109,17 @@ func Summarize(txns []Transaction) Summary {
 		}
 		return s.ByMonth[i].Month < s.ByMonth[j].Month
 	})
+
+	if len(txns) > 0 {
+		span := (latest.Year()*12 + int(latest.Month())) -
+			(earliest.Year()*12 + int(earliest.Month())) + 1
+		s.Averages = MonthlyAverages{
+			Months:   span,
+			Income:   s.TotalIncome / float64(span),
+			Expenses: s.TotalExpenses / float64(span),
+			Savings:  s.Savings / float64(span),
+		}
+	}
 
 	return s
 }

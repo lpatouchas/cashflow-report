@@ -73,4 +73,68 @@ func TestRender(t *testing.T) {
 		err := New(out).Render(ctx, transaction.Summary{})
 		require.Error(t, err)
 	})
+
+	t.Run("renders monthly average cards", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome:   3000,
+			TotalExpenses: 1200,
+			Savings:       1800,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.April, Income: 1500, Expenses: 600, Savings: 900},
+				{Year: 2026, Month: time.May, Income: 1500, Expenses: 600, Savings: 900},
+			},
+			Averages: transaction.MonthlyAverages{
+				Months: 2, Income: 1500, Expenses: 600, Savings: 900,
+			},
+		}
+
+		err := New(out).Render(ctx, summary)
+		require.NoError(t, err)
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		content := string(data)
+
+		require.Contains(t, content, "Monthly Average")
+		require.Contains(t, content, "over 2 months")
+		require.Contains(t, content, "Avg Income / mo")
+		require.Contains(t, content, "Avg Expenses / mo")
+		require.Contains(t, content, "Avg Savings / mo")
+		require.Contains(t, content, "€600,00")  // avg expenses, euro-formatted
+	})
+
+	t.Run("uses singular month wording for a single month", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome: 1000, Savings: 1000,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.May, Income: 1000, Savings: 1000},
+			},
+			Averages: transaction.MonthlyAverages{Months: 1, Income: 1000, Savings: 1000},
+		}
+
+		err := New(out).Render(ctx, summary)
+		require.NoError(t, err)
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		require.Contains(t, string(data), "over 1 month)")
+	})
+
+	t.Run("omits average cards when there are no transactions", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		err := New(out).Render(ctx, transaction.Summary{})
+		require.NoError(t, err)
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		require.NotContains(t, string(data), "Monthly Average")
+	})
 }

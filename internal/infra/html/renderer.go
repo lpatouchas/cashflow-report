@@ -26,8 +26,9 @@ type viewData struct {
 }
 
 var tmpl = template.Must(template.New("report").Funcs(template.FuncMap{
-	"euro":  formatEuro,
-	"month": monthLabel,
+	"euro":   formatEuro,
+	"month":  monthLabel,
+	"months": monthsLabel,
 }).Parse(reportHTML))
 
 func (r *Renderer) Render(ctx context.Context, summary transaction.Summary) error {
@@ -45,6 +46,15 @@ func (r *Renderer) Render(ctx context.Context, summary transaction.Summary) erro
 
 func monthLabel(mb transaction.MonthlyBreakdown) string {
 	return mb.Month.String() + " " + strconv.Itoa(mb.Year)
+}
+
+// monthsLabel renders a month count with correct singular/plural wording,
+// e.g. "1 month" or "3 months".
+func monthsLabel(n int) string {
+	if n == 1 {
+		return "1 month"
+	}
+	return strconv.Itoa(n) + " months"
 }
 
 // formatEuro renders a value as Greek-locale currency: €1.234,56.
@@ -95,6 +105,15 @@ caption { text-align: left; font-weight: 600; margin-bottom: .5rem; }
   <div class="card"><div>Total Expenses</div><div class="value">{{ euro .Summary.TotalExpenses }}</div></div>
   <div class="card savings"><div>Savings</div><div class="value">{{ euro .Summary.Savings }}</div></div>
 </div>
+
+{{ if gt .Summary.Averages.Months 0 }}
+<h2>Monthly Average <small>(over {{ months .Summary.Averages.Months }})</small></h2>
+<div class="cards">
+  <div class="card"><div>Avg Income / mo</div><div class="value">{{ euro .Summary.Averages.Income }}</div></div>
+  <div class="card"><div>Avg Expenses / mo</div><div class="value">{{ euro .Summary.Averages.Expenses }}</div></div>
+  <div class="card savings"><div>Avg Savings / mo</div><div class="value">{{ euro .Summary.Averages.Savings }}</div></div>
+</div>
+{{ end }}
 
 {{ if .Summary.ByMonth }}
 <table>
