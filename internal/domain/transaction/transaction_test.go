@@ -116,4 +116,39 @@ func TestSummarize(t *testing.T) {
 		require.Equal(t, 2026, got.ByMonth[1].Year)
 		require.Equal(t, time.May, got.ByMonth[1].Month)
 	})
+
+	t.Run("single month averages equal totals", func(t *testing.T) {
+		got := Summarize([]Transaction{
+			tx("a", "f", 100, false, may),
+			tx("b", "f", 30, true, may2),
+		})
+		require.Equal(t, 1, got.Averages.Months)
+		require.InDelta(t, 100, got.Averages.Income, 0.001)
+		require.InDelta(t, 30, got.Averages.Expenses, 0.001)
+		require.InDelta(t, 70, got.Averages.Savings, 0.001)
+	})
+
+	t.Run("gap month counts in the calendar span", func(t *testing.T) {
+		mar := time.Date(2026, time.March, 15, 0, 0, 0, 0, time.UTC)
+		// March + May, no April: span is 3 months.
+		got := Summarize([]Transaction{
+			tx("a", "f", 300, false, mar),
+			tx("b", "f", 600, true, may),
+		})
+		require.Equal(t, 3, got.Averages.Months)
+		require.InDelta(t, 100, got.Averages.Income, 0.001)   // 300 / 3
+		require.InDelta(t, 200, got.Averages.Expenses, 0.001) // 600 / 3
+		require.InDelta(t, -100, got.Averages.Savings, 0.001) // (300-600)/3
+	})
+
+	t.Run("calendar span crosses a year boundary", func(t *testing.T) {
+		dec2025 := time.Date(2025, time.December, 1, 0, 0, 0, 0, time.UTC)
+		// Dec 2025 .. May 2026 inclusive = 6 months.
+		got := Summarize([]Transaction{
+			tx("a", "f", 60, false, dec2025),
+			tx("b", "f", 0, true, may),
+		})
+		require.Equal(t, 6, got.Averages.Months)
+		require.InDelta(t, 10, got.Averages.Income, 0.001) // 60 / 6
+	})
 }
