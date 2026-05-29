@@ -29,3 +29,20 @@ type MonthlyBreakdown struct {
 	Expenses float64
 	Savings  float64
 }
+
+// FilterTransfers removes inter-account transfers and duplicate anomalies.
+// Any ID appearing more than once across the input is dropped entirely;
+// only transactions whose ID occurs exactly once are returned.
+func FilterTransfers(txns []Transaction) []Transaction {
+	counts := make(map[string]int, len(txns))
+	for _, t := range txns {
+		counts[t.ID]++
+	}
+	var kept []Transaction
+	for _, t := range txns {
+		if counts[t.ID] == 1 {
+			kept = append(kept, t)
+		}
+	}
+	return kept
+}
