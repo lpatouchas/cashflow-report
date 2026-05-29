@@ -25,6 +25,8 @@ func TestRun(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, string(data), "Finance Report")
 		require.Contains(t, string(data), "May 2026")
+		require.Contains(t, string(data), "Monthly Average")
+		require.Contains(t, string(data), "over 1 month")
 	})
 
 	t.Run("returns error when no data", func(t *testing.T) {
