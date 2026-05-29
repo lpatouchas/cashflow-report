@@ -125,6 +125,7 @@ When creating a new plan:
    Update the plan file in place with whatever the review pass uncovered. Only after that pass is the plan ready to execute.
 
 - [Finance Report MVP](docs/plans/2026-05-29_finance-report-mvp.md) — CLI that summarises bank CSVs into an HTML report, excluding inter-account transfers.
+- [Monthly Average](docs/superpowers/plans/2026-05-30-monthly-average.md) — per-month average (income/expenses/savings) over the data's full calendar span, shown as a second row of cards in the HTML report.
 
 ## Branching
 
