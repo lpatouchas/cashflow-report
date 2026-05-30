@@ -104,6 +104,23 @@ func TestSummarize(t *testing.T) {
 		require.InDelta(t, 200, got.ByMonth[1].Savings, 0.001)
 	})
 
+	t.Run("attaches each transaction to its month", func(t *testing.T) {
+		a := tx("a", "f", 50, false, may)
+		b := tx("b", "f", 20, true, may2)
+		c := tx("c", "f", 200, false, apr)
+
+		got := Summarize([]Transaction{a, b, c})
+		require.Len(t, got.ByMonth, 2)
+
+		// May is newest, so ByMonth[0]; it holds the two May movements.
+		require.Equal(t, time.May, got.ByMonth[0].Month)
+		require.ElementsMatch(t, []Transaction{a, b}, got.ByMonth[0].Transactions)
+
+		// April holds only c.
+		require.Equal(t, time.April, got.ByMonth[1].Month)
+		require.Equal(t, []Transaction{c}, got.ByMonth[1].Transactions)
+	})
+
 	t.Run("sorts across years newest first", func(t *testing.T) {
 		dec2025 := time.Date(2025, time.December, 31, 0, 0, 0, 0, time.UTC)
 		got := Summarize([]Transaction{
