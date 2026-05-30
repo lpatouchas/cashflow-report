@@ -217,9 +217,9 @@ func TestRender(t *testing.T) {
 		content := string(data)
 
 		require.Contains(t, content, `"2026-05"`)       // month key in the tx map
-		require.Contains(t, content, `"desc":"Salary"`)  // income description
-		require.Contains(t, content, `"amt":1500`)       // income signed positive
-		require.Contains(t, content, `"amt":-500`)        // expense signed negative
+		require.Contains(t, content, `"desc":"Salary"`) // income description
+		require.Contains(t, content, `"amt":1500`)      // income signed positive
+		require.Contains(t, content, `"amt":-500`)      // expense signed negative
 		require.Contains(t, content, `"src":"acc.csv"`)
 		require.Contains(t, content, `"k":"2026-05-12"`)     // ISO sort key
 		require.Contains(t, content, `"date":"12 May 2026"`) // display date

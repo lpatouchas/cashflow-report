@@ -166,8 +166,8 @@ func TestSummarize(t *testing.T) {
 			tx("b", "f", 0, true, may),
 		})
 		require.Equal(t, 6, got.Averages.Months)
-		require.InDelta(t, 10, got.Averages.Income, 0.001) // 60 / 6
-		require.InDelta(t, 0, got.Averages.Expenses, 0.001)  // 0 / 6
-		require.InDelta(t, 10, got.Averages.Savings, 0.001)  // (60-0) / 6
+		require.InDelta(t, 10, got.Averages.Income, 0.001)  // 60 / 6
+		require.InDelta(t, 0, got.Averages.Expenses, 0.001) // 0 / 6
+		require.InDelta(t, 10, got.Averages.Savings, 0.001) // (60-0) / 6
 	})
 }
