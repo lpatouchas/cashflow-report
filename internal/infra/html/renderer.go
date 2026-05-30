@@ -547,6 +547,7 @@ body { background: #2a2824; font-family: var(--sans); }
 
 /* ---------- TRANSACTION MODAL ---------- */
 .row.clickable { cursor: pointer; }
+.row.clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .tx-modal {
   position: fixed; inset: 0; z-index: 50;
   display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -738,31 +739,32 @@ body { background: #2a2824; font-family: var(--sans); }
 {{ end }}
 
   </div>
-</div>
 
-<div class="tx-modal" id="tx-modal" hidden>
-  <div class="tx-backdrop" data-close></div>
-  <div class="tx-dialog" role="dialog" aria-modal="true" aria-labelledby="tx-title">
-    <div class="tx-head">
-      <h2 class="tx-title" id="tx-title"></h2>
-      <button class="tx-close" data-close aria-label="Close">&times;</button>
-    </div>
-    <div class="tx-totals" id="tx-totals"></div>
-    <div class="tx-scroll">
-      <table class="tx-table" id="tx-table">
-        <thead>
-          <tr>
-            <th class="l active" data-key="k"><span class="th-in">Date<span class="sort-arrow show">&#9660;</span></span></th>
-            <th class="l" data-key="desc"><span class="th-in">Description<span class="sort-arrow">&#9660;</span></span></th>
-            <th class="r" data-key="amt"><span class="th-in">Amount<span class="sort-arrow">&#9660;</span></span></th>
-            <th class="l" data-key="src"><span class="th-in">Source<span class="sort-arrow">&#9660;</span></span></th>
-          </tr>
-        </thead>
-        <tbody id="tx-body"></tbody>
-      </table>
+  <div class="tx-modal" id="tx-modal" hidden>
+    <div class="tx-backdrop" data-close></div>
+    <div class="tx-dialog" role="dialog" aria-modal="true" aria-labelledby="tx-title">
+      <div class="tx-head">
+        <h2 class="tx-title" id="tx-title"></h2>
+        <button class="tx-close" data-close aria-label="Close">&times;</button>
+      </div>
+      <div class="tx-totals" id="tx-totals"></div>
+      <div class="tx-scroll">
+        <table class="tx-table" id="tx-table">
+          <thead>
+            <tr>
+              <th class="l active" data-key="k"><span class="th-in">Date<span class="sort-arrow show">▼</span></span></th>
+              <th class="l" data-key="desc"><span class="th-in">Description<span class="sort-arrow">▼</span></span></th>
+              <th class="r" data-key="amt"><span class="th-in">Amount<span class="sort-arrow">▼</span></span></th>
+              <th class="l" data-key="src"><span class="th-in">Source<span class="sort-arrow">▼</span></span></th>
+            </tr>
+          </thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
+
 <script>window.FIN = {{ .ChartJSON }};</script>
 <script>
 (function () {
