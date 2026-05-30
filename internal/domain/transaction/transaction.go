@@ -54,7 +54,12 @@ func FilterTransfers(txns []Transaction) []Transaction {
 	var kept []Transaction
 	for _, t := range txns {
 		if counts[t.ID] == 1 {
-			kept = append(kept, t)
+			//ignore large debits from invest
+			investmentMoves := t.IsDebit && t.SourceFile == "invest.csv" && t.Amount > 2000
+			//ltips := !t.IsDebit && t.SourceFile == "misthodosia.csv" && t.Amount > 12000
+			if !investmentMoves {
+				kept = append(kept, t)
+			}
 		}
 	}
 	return kept

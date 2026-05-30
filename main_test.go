@@ -23,7 +23,7 @@ func TestRun(t *testing.T) {
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
-		require.Contains(t, string(data), "Finance Report")
+		require.Contains(t, string(data), "The Monthly Review")
 		require.Contains(t, string(data), "May 2026")
 		require.Contains(t, string(data), "Monthly Average")
 		require.Contains(t, string(data), "over 1 month")

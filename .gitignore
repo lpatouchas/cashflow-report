@@ -7,3 +7,12 @@
 # Go build artifacts
 /personal-finance
 *.out
+
+# macOS
+.DS_Store
+
+# JetBrains / GoLand
+.idea/
+
+# Claude Code local config
+.claude/

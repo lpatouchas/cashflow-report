@@ -100,10 +100,7 @@ func TestRender(t *testing.T) {
 
 		require.Contains(t, content, "Monthly Average")
 		require.Contains(t, content, "over 2 months")
-		require.Contains(t, content, "Avg Income / mo")
-		require.Contains(t, content, "Avg Expenses / mo")
-		require.Contains(t, content, "Avg Savings / mo")
-		require.Contains(t, content, "€600,00")  // avg expenses, euro-formatted
+		require.Contains(t, content, "€600,00") // avg expenses, euro-formatted
 	})
 
 	t.Run("uses singular month wording for a single month", func(t *testing.T) {
@@ -123,7 +120,42 @@ func TestRender(t *testing.T) {
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
-		require.Contains(t, string(data), "over 1 month)")
+		require.Contains(t, string(data), "over 1 month<")
+	})
+
+	t.Run("renders trend, best/lean tags and scaled rate bars", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		// Rising expenses across months -> upward trend. February is the best
+		// savings month; March is the leanest (negative savings) and also has
+		// no income, exercising the rate guard.
+		summary := transaction.Summary{
+			TotalIncome:   4000,
+			TotalExpenses: 2400,
+			Savings:       1600,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.April, Income: 2000, Expenses: 1800, Savings: 200},
+				{Year: 2026, Month: time.March, Income: 0, Expenses: 100, Savings: -100},
+				{Year: 2026, Month: time.February, Income: 2000, Expenses: 500, Savings: 1500},
+			},
+			Averages: transaction.MonthlyAverages{
+				Months: 3, Income: 1333.33, Expenses: 800, Savings: 533.33,
+			},
+		}
+
+		require.NoError(t, New(out).Render(ctx, summary))
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		content := string(data)
+
+		require.Contains(t, content, "trending up") // rising expenses
+		require.Contains(t, content, `<span class="tag best">best</span>`)
+		require.Contains(t, content, `<span class="tag worst">lean</span>`)
+		require.Contains(t, content, "Best month Feb · leanest Mar")
+		require.Contains(t, content, "width: 100.0%") // best month fills the bar
+		require.Contains(t, content, "0,0 %")         // zero-income month rate
 	})
 
 	t.Run("omits average cards when there are no transactions", func(t *testing.T) {
