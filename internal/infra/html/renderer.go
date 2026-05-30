@@ -545,6 +545,60 @@ body { background: #2a2824; font-family: var(--sans); }
   .rate-bar { display: none; }
 }
 
+/* ---------- TRANSACTION MODAL ---------- */
+.row.clickable { cursor: pointer; }
+.tx-modal {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.tx-modal[hidden] { display: none; }
+.tx-backdrop { position: absolute; inset: 0; background: rgba(20,18,12,.55); }
+.tx-dialog {
+  position: relative; z-index: 1; width: min(680px, 100%); max-height: 84vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--sheet); color: var(--ink); border: 1px solid var(--rule);
+  box-shadow: 0 30px 80px -30px rgba(0,0,0,.6);
+}
+.tx-head {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 22px 24px 14px; border-bottom: 1px solid var(--rule);
+}
+.tx-title {
+  font-family: var(--serif); font-weight: 400; font-size: 24px;
+  margin: 0; letter-spacing: -0.01em;
+}
+.tx-close {
+  margin-left: auto; font-size: 22px; line-height: 1; color: var(--muted);
+  background: transparent; border: none; cursor: pointer; padding: 0 4px;
+}
+.tx-close:hover { color: var(--ink); }
+.tx-totals {
+  display: flex; gap: 22px; flex-wrap: wrap; padding: 12px 24px;
+  font-family: var(--sans); font-size: 12px; color: var(--muted);
+  border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums;
+}
+.tx-totals b { color: var(--ink); font-weight: 600; }
+.tx-scroll { overflow-y: auto; }
+.tx-table { width: 100%; border-collapse: collapse; }
+.tx-table th {
+  font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); padding: 12px 24px; cursor: pointer;
+  user-select: none; border-bottom: 1px solid var(--rule);
+  position: sticky; top: 0; background: var(--sheet); z-index: 1;
+}
+.tx-table th.r { text-align: right; }
+.tx-table th.l { text-align: left; }
+.tx-table th:hover, .tx-table th.active { color: var(--ink); }
+.tx-table td {
+  padding: 11px 24px; font-family: var(--sans); font-size: 13.5px;
+  border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums;
+}
+.tx-table td.r { text-align: right; }
+.tx-table td.l { text-align: left; }
+.tx-amt.pos { color: var(--pos); }
+.tx-amt.neg { color: var(--neg); }
+.tx-src { color: var(--muted); font-size: 12px; }
+
 /* ---------- PRINT (paper-friendly Ledger palette) ---------- */
 @media print {
   body { background: #fff; }
@@ -556,7 +610,7 @@ body { background: #2a2824; font-family: var(--sans); }
     --shadow: none; padding: 0;
   }
   .sheet { box-shadow: none; max-width: none; padding: 0; }
-  .editions, .chart-controls, .block-hint { display: none !important; }
+  .editions, .chart-controls, .block-hint, .tx-modal { display: none !important; }
 }
 </style>
 </head>
@@ -652,7 +706,7 @@ body { background: #2a2824; font-family: var(--sans); }
           </thead>
           <tbody>
 {{ range .Rows }}
-            <tr class="row{{ if .Best }} best{{ end }}{{ if .Worst }} worst{{ end }}" data-key="{{ .Key }}" data-income="{{ .Income }}" data-expenses="{{ .Expenses }}" data-savings="{{ .Savings }}" data-rate="{{ .Rate }}">
+            <tr class="row clickable{{ if .Best }} best{{ end }}{{ if .Worst }} worst{{ end }}" data-key="{{ .Key }}" data-income="{{ .Income }}" data-expenses="{{ .Expenses }}" data-savings="{{ .Savings }}" data-rate="{{ .Rate }}" tabindex="0" role="button" aria-label="View {{ .Label }} transactions">
               <td class="l mcell">{{ .Label }}{{ if .Best }}<span class="tag best">best</span>{{ end }}{{ if .Worst }}<span class="tag worst">lean</span>{{ end }}</td>
               <td class="r num">{{ euro .Income }}</td>
               <td class="r num">{{ euro .Expenses }}</td>
@@ -686,6 +740,29 @@ body { background: #2a2824; font-family: var(--sans); }
   </div>
 </div>
 
+<div class="tx-modal" id="tx-modal" hidden>
+  <div class="tx-backdrop" data-close></div>
+  <div class="tx-dialog" role="dialog" aria-modal="true" aria-labelledby="tx-title">
+    <div class="tx-head">
+      <h2 class="tx-title" id="tx-title"></h2>
+      <button class="tx-close" data-close aria-label="Close">&times;</button>
+    </div>
+    <div class="tx-totals" id="tx-totals"></div>
+    <div class="tx-scroll">
+      <table class="tx-table" id="tx-table">
+        <thead>
+          <tr>
+            <th class="l active" data-key="k"><span class="th-in">Date<span class="sort-arrow show">&#9660;</span></span></th>
+            <th class="l" data-key="desc"><span class="th-in">Description<span class="sort-arrow">&#9660;</span></span></th>
+            <th class="r" data-key="amt"><span class="th-in">Amount<span class="sort-arrow">&#9660;</span></span></th>
+            <th class="l" data-key="src"><span class="th-in">Source<span class="sort-arrow">&#9660;</span></span></th>
+          </tr>
+        </thead>
+        <tbody id="tx-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 <script>window.FIN = {{ .ChartJSON }};</script>
 <script>
 (function () {

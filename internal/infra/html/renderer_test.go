@@ -170,6 +170,29 @@ func TestRender(t *testing.T) {
 		require.NotContains(t, string(data), "Monthly Average")
 	})
 
+	t.Run("renders clickable month rows and the modal scaffold", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome: 1500, TotalExpenses: 500, Savings: 1000,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.May, Income: 1500, Expenses: 500, Savings: 1000},
+			},
+		}
+
+		require.NoError(t, New(out).Render(ctx, summary))
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		content := string(data)
+
+		require.Contains(t, content, `id="tx-modal"`)        // modal element
+		require.Contains(t, content, `id="tx-body"`)         // modal table body
+		require.Contains(t, content, `class="row clickable`) // rows are clickable
+		require.Contains(t, content, `role="button"`)        // keyboard/AT affordance
+	})
+
 	t.Run("embeds per-month transactions as JSON", func(t *testing.T) {
 		dir := t.TempDir()
 		out := filepath.Join(dir, "report.html")
