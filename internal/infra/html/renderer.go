@@ -948,6 +948,94 @@ body { background: #2a2824; font-family: var(--sans); }
   render();
 })();
 </script>
+<script>
+(function () {
+  var TX = (window.FIN && window.FIN.tx) || {};
+  var modal = document.getElementById('tx-modal');
+  var ledger = document.getElementById('ledger');
+  if (!modal || !ledger) return;
+
+  var titleEl = document.getElementById('tx-title');
+  var totalsEl = document.getElementById('tx-totals');
+  var bodyEl = document.getElementById('tx-body');
+  var tableEl = document.getElementById('tx-table');
+  var lastTrigger = null;
+  var rows = [];
+  var sort = { key: 'k', dir: 'desc' };
+
+  var eu = function (v) {
+    return (v < 0 ? '−€' : '€') + Math.abs(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+
+  var renderRows = function () {
+    var sorted = rows.slice().sort(function (a, b) {
+      var av = a[sort.key], bv = b[sort.key], c;
+      if (sort.key === 'amt') { c = av > bv ? 1 : av < bv ? -1 : 0; }
+      else { c = String(av).localeCompare(String(bv)); }
+      return sort.dir === 'asc' ? c : -c;
+    });
+    var html = '';
+    sorted.forEach(function (t) {
+      var cls = t.amt < 0 ? 'neg' : 'pos';
+      html += '<tr><td class="l">' + esc(t.date) + '</td>' +
+              '<td class="l">' + esc(t.desc) + '</td>' +
+              '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
+              '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
+    });
+    bodyEl.innerHTML = html;
+    tableEl.querySelectorAll('th').forEach(function (th) {
+      var on = th.getAttribute('data-key') === sort.key;
+      th.classList.toggle('active', on);
+      var ar = th.querySelector('.sort-arrow');
+      if (ar) { ar.classList.toggle('show', on); ar.textContent = sort.dir === 'asc' ? '▲' : '▼'; }
+    });
+  };
+
+  var open = function (tr) {
+    var key = tr.getAttribute('data-key');
+    rows = TX[key] || [];
+    lastTrigger = tr;
+    var mcell = tr.querySelector('.mcell');
+    titleEl.textContent = mcell ? mcell.textContent.replace(/best|lean/gi, '').trim() : key;
+    totalsEl.innerHTML =
+      '<span>Income <b>' + eu(parseFloat(tr.getAttribute('data-income'))) + '</b></span>' +
+      '<span>Expenses <b>' + eu(parseFloat(tr.getAttribute('data-expenses'))) + '</b></span>' +
+      '<span>Savings <b>' + eu(parseFloat(tr.getAttribute('data-savings'))) + '</b></span>';
+    sort = { key: 'k', dir: 'desc' };
+    renderRows();
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  };
+
+  var close = function () {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    if (lastTrigger) lastTrigger.focus();
+  };
+
+  ledger.querySelectorAll('tbody tr').forEach(function (tr) {
+    tr.addEventListener('click', function () { open(tr); });
+    tr.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(tr); }
+    });
+  });
+  modal.querySelectorAll('[data-close]').forEach(function (el) {
+    el.addEventListener('click', close);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+  tableEl.querySelectorAll('th').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var k = th.getAttribute('data-key');
+      if (sort.key === k) { sort.dir = sort.dir === 'asc' ? 'desc' : 'asc'; }
+      else { sort = { key: k, dir: k === 'amt' ? 'desc' : 'asc' }; }
+      renderRows();
+    });
+  });
+})();
+</script>
 </body>
 </html>
 `
