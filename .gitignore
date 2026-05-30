@@ -4,6 +4,18 @@
 # Dropped bank exports (user data — never commit)
 /data/*.csv
 
+# Local backups of bank exports (user data — never commit)
+/bkp/
+
 # Go build artifacts
 /personal-finance
 *.out
+
+# macOS
+.DS_Store
+
+# JetBrains / GoLand
+.idea/
+
+# Claude Code local config
+.claude/

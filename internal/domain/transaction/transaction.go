@@ -34,13 +34,15 @@ type MonthlyAverages struct {
 	Savings  float64
 }
 
-// MonthlyBreakdown holds income/expenses/savings for a single calendar month.
+// MonthlyBreakdown holds income/expenses/savings for a single calendar month,
+// along with the transactions that make it up.
 type MonthlyBreakdown struct {
-	Year     int
-	Month    time.Month
-	Income   float64
-	Expenses float64
-	Savings  float64
+	Year         int
+	Month        time.Month
+	Income       float64
+	Expenses     float64
+	Savings      float64
+	Transactions []Transaction
 }
 
 // FilterTransfers removes inter-account transfers and duplicate anomalies.
@@ -54,14 +56,19 @@ func FilterTransfers(txns []Transaction) []Transaction {
 	var kept []Transaction
 	for _, t := range txns {
 		if counts[t.ID] == 1 {
-			kept = append(kept, t)
+			//ignore large debits from invest
+			investmentMoves := t.IsDebit && t.SourceFile == "invest.csv" && t.Amount > 2000
+			//ltips := !t.IsDebit && t.SourceFile == "misthodosia.csv" && t.Amount > 12000
+			if !investmentMoves {
+				kept = append(kept, t)
+			}
 		}
 	}
 	return kept
 }
 
-// Summarize aggregates transactions into totals and a chronological
-// per-month breakdown. Debits are expenses; credits are income.
+// Summarize aggregates transactions into totals and a per-month breakdown
+// ordered newest month first. Debits are expenses; credits are income.
 func Summarize(txns []Transaction) Summary {
 	type key struct {
 		year  int
@@ -96,6 +103,7 @@ func Summarize(txns []Transaction) Summary {
 		} else {
 			mb.Income += t.Amount
 		}
+		mb.Transactions = append(mb.Transactions, t)
 	}
 	s.Savings = s.TotalIncome - s.TotalExpenses
 
@@ -105,9 +113,9 @@ func Summarize(txns []Transaction) Summary {
 	}
 	sort.Slice(s.ByMonth, func(i, j int) bool {
 		if s.ByMonth[i].Year != s.ByMonth[j].Year {
-			return s.ByMonth[i].Year < s.ByMonth[j].Year
+			return s.ByMonth[i].Year > s.ByMonth[j].Year
 		}
-		return s.ByMonth[i].Month < s.ByMonth[j].Month
+		return s.ByMonth[i].Month > s.ByMonth[j].Month
 	})
 
 	if len(txns) > 0 {

@@ -20,6 +20,8 @@ A CLI that summarises bank transactions into an HTML report.
   appearing more than once across the loaded files is treated as a transfer
   or duplicate and left out of the totals.
 - Reports total income, expenses, and savings, plus a per-month breakdown.
+- The HTML report's monthly table is interactive: click a month to open a modal
+  listing that month's individual transactions, sortable by any column.
 
 ## Development
 

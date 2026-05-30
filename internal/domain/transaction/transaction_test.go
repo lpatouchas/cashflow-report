@@ -84,7 +84,7 @@ func TestSummarize(t *testing.T) {
 		require.InDelta(t, 70, got.Savings, 0.001)
 	})
 
-	t.Run("groups by month sorted oldest first", func(t *testing.T) {
+	t.Run("groups by month sorted newest first", func(t *testing.T) {
 		got := Summarize([]Transaction{
 			tx("a", "f", 50, false, may),
 			tx("b", "f", 20, true, may2),
@@ -93,28 +93,45 @@ func TestSummarize(t *testing.T) {
 		require.Len(t, got.ByMonth, 2)
 
 		require.Equal(t, 2026, got.ByMonth[0].Year)
-		require.Equal(t, time.April, got.ByMonth[0].Month)
-		require.InDelta(t, 200, got.ByMonth[0].Income, 0.001)
-		require.InDelta(t, 0, got.ByMonth[0].Expenses, 0.001)
-		require.InDelta(t, 200, got.ByMonth[0].Savings, 0.001)
+		require.Equal(t, time.May, got.ByMonth[0].Month)
+		require.InDelta(t, 50, got.ByMonth[0].Income, 0.001)
+		require.InDelta(t, 20, got.ByMonth[0].Expenses, 0.001)
+		require.InDelta(t, 30, got.ByMonth[0].Savings, 0.001)
 
-		require.Equal(t, time.May, got.ByMonth[1].Month)
-		require.InDelta(t, 50, got.ByMonth[1].Income, 0.001)
-		require.InDelta(t, 20, got.ByMonth[1].Expenses, 0.001)
-		require.InDelta(t, 30, got.ByMonth[1].Savings, 0.001)
+		require.Equal(t, time.April, got.ByMonth[1].Month)
+		require.InDelta(t, 200, got.ByMonth[1].Income, 0.001)
+		require.InDelta(t, 0, got.ByMonth[1].Expenses, 0.001)
+		require.InDelta(t, 200, got.ByMonth[1].Savings, 0.001)
 	})
 
-	t.Run("sorts across years oldest first", func(t *testing.T) {
+	t.Run("attaches each transaction to its month", func(t *testing.T) {
+		a := tx("a", "f", 50, false, may)
+		b := tx("b", "f", 20, true, may2)
+		c := tx("c", "f", 200, false, apr)
+
+		got := Summarize([]Transaction{a, b, c})
+		require.Len(t, got.ByMonth, 2)
+
+		// May is newest, so ByMonth[0]; it holds the two May movements.
+		require.Equal(t, time.May, got.ByMonth[0].Month)
+		require.ElementsMatch(t, []Transaction{a, b}, got.ByMonth[0].Transactions)
+
+		// April holds only c.
+		require.Equal(t, time.April, got.ByMonth[1].Month)
+		require.Equal(t, []Transaction{c}, got.ByMonth[1].Transactions)
+	})
+
+	t.Run("sorts across years newest first", func(t *testing.T) {
 		dec2025 := time.Date(2025, time.December, 31, 0, 0, 0, 0, time.UTC)
 		got := Summarize([]Transaction{
 			tx("a", "f", 10, false, may),
 			tx("b", "f", 5, false, dec2025),
 		})
 		require.Len(t, got.ByMonth, 2)
-		require.Equal(t, 2025, got.ByMonth[0].Year)
-		require.Equal(t, time.December, got.ByMonth[0].Month)
-		require.Equal(t, 2026, got.ByMonth[1].Year)
-		require.Equal(t, time.May, got.ByMonth[1].Month)
+		require.Equal(t, 2026, got.ByMonth[0].Year)
+		require.Equal(t, time.May, got.ByMonth[0].Month)
+		require.Equal(t, 2025, got.ByMonth[1].Year)
+		require.Equal(t, time.December, got.ByMonth[1].Month)
 	})
 
 	t.Run("single month averages equal totals", func(t *testing.T) {
@@ -149,8 +166,8 @@ func TestSummarize(t *testing.T) {
 			tx("b", "f", 0, true, may),
 		})
 		require.Equal(t, 6, got.Averages.Months)
-		require.InDelta(t, 10, got.Averages.Income, 0.001) // 60 / 6
-		require.InDelta(t, 0, got.Averages.Expenses, 0.001)  // 0 / 6
-		require.InDelta(t, 10, got.Averages.Savings, 0.001)  // (60-0) / 6
+		require.InDelta(t, 10, got.Averages.Income, 0.001)  // 60 / 6
+		require.InDelta(t, 0, got.Averages.Expenses, 0.001) // 0 / 6
+		require.InDelta(t, 10, got.Averages.Savings, 0.001) // (60-0) / 6
 	})
 }
