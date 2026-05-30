@@ -34,13 +34,15 @@ type MonthlyAverages struct {
 	Savings  float64
 }
 
-// MonthlyBreakdown holds income/expenses/savings for a single calendar month.
+// MonthlyBreakdown holds income/expenses/savings for a single calendar month,
+// along with the transactions that make it up.
 type MonthlyBreakdown struct {
-	Year     int
-	Month    time.Month
-	Income   float64
-	Expenses float64
-	Savings  float64
+	Year         int
+	Month        time.Month
+	Income       float64
+	Expenses     float64
+	Savings      float64
+	Transactions []Transaction
 }
 
 // FilterTransfers removes inter-account transfers and duplicate anomalies.
@@ -101,6 +103,7 @@ func Summarize(txns []Transaction) Summary {
 		} else {
 			mb.Income += t.Amount
 		}
+		mb.Transactions = append(mb.Transactions, t)
 	}
 	s.Savings = s.TotalIncome - s.TotalExpenses
 

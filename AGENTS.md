@@ -126,6 +126,7 @@ When creating a new plan:
 
 - [Finance Report MVP](docs/plans/2026-05-29_finance-report-mvp.md) — CLI that summarises bank CSVs into an HTML report, excluding inter-account transfers.
 - [Monthly Average](docs/superpowers/plans/2026-05-30-monthly-average.md) — per-month average (income/expenses/savings) over the data's full calendar span, shown as a second row of cards in the HTML report.
+- [Month Transaction Detail](docs/superpowers/plans/2026-05-30-month-transaction-detail.md) — click a month row to open a modal of that month's transactions, one line each, sortable by column.
 
 ## Branching
 

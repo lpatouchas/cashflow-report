@@ -169,4 +169,59 @@ func TestRender(t *testing.T) {
 		require.NoError(t, err)
 		require.NotContains(t, string(data), "Monthly Average")
 	})
+
+	t.Run("renders clickable month rows and the modal scaffold", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome: 1500, TotalExpenses: 500, Savings: 1000,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.May, Income: 1500, Expenses: 500, Savings: 1000},
+			},
+		}
+
+		require.NoError(t, New(out).Render(ctx, summary))
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		content := string(data)
+
+		require.Contains(t, content, `id="tx-modal"`)        // modal element
+		require.Contains(t, content, `id="tx-body"`)         // modal table body
+		require.Contains(t, content, `class="row clickable`) // rows are clickable
+		require.Contains(t, content, `role="button"`)        // keyboard/AT affordance
+	})
+
+	t.Run("embeds per-month transactions as JSON", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome: 1500, TotalExpenses: 500, Savings: 1000,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{
+					Year: 2026, Month: time.May, Income: 1500, Expenses: 500, Savings: 1000,
+					Transactions: []transaction.Transaction{
+						{ID: "1", Date: time.Date(2026, time.May, 12, 0, 0, 0, 0, time.UTC), Description: "Salary", Amount: 1500, IsDebit: false, SourceFile: "acc.csv"},
+						{ID: "2", Date: time.Date(2026, time.May, 3, 0, 0, 0, 0, time.UTC), Description: "Rent", Amount: 500, IsDebit: true, SourceFile: "acc.csv"},
+					},
+				},
+			},
+		}
+
+		require.NoError(t, New(out).Render(ctx, summary))
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		content := string(data)
+
+		require.Contains(t, content, `"2026-05"`)       // month key in the tx map
+		require.Contains(t, content, `"desc":"Salary"`) // income description
+		require.Contains(t, content, `"amt":1500`)      // income signed positive
+		require.Contains(t, content, `"amt":-500`)      // expense signed negative
+		require.Contains(t, content, `"src":"acc.csv"`)
+		require.Contains(t, content, `"k":"2026-05-12"`)     // ISO sort key
+		require.Contains(t, content, `"date":"12 May 2026"`) // display date
+	})
 }

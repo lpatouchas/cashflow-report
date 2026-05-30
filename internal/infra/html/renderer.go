@@ -46,6 +46,15 @@ type chartMonth struct {
 	Rate     float64 `json:"rate"`
 }
 
+// txVM is one transaction line inside a month's detail modal, serialized to JS.
+type txVM struct {
+	Date   string  `json:"date"` // "12 May 2026", for display
+	Sort   string  `json:"k"`    // "2026-05-12", for date sorting
+	Desc   string  `json:"desc"`
+	Amount float64 `json:"amt"` // signed: income +, expense −
+	Source string  `json:"src"`
+}
+
 type viewData struct {
 	Generated  string
 	Summary    transaction.Summary
@@ -96,7 +105,26 @@ func buildView(summary transaction.Summary) viewData {
 			Rate:     rateOf(mb.Income, mb.Savings),
 		}
 	}
-	payload, _ := json.Marshal(map[string]any{"months": chart})
+	txByMonth := make(map[string][]txVM, n)
+	for _, mb := range summary.ByMonth {
+		key := fmt.Sprintf("%04d-%02d", mb.Year, int(mb.Month))
+		lines := make([]txVM, len(mb.Transactions))
+		for j, t := range mb.Transactions {
+			amt := t.Amount
+			if t.IsDebit {
+				amt = -amt
+			}
+			lines[j] = txVM{
+				Date:   t.Date.Format("02 January 2006"),
+				Sort:   t.Date.Format("2006-01-02"),
+				Desc:   t.Description,
+				Amount: amt,
+				Source: t.SourceFile,
+			}
+		}
+		txByMonth[key] = lines
+	}
+	payload, _ := json.Marshal(map[string]any{"months": chart, "tx": txByMonth})
 	vd.ChartJSON = template.JS(payload)
 	vd.TrendDown = trendingDown(chart)
 
@@ -517,6 +545,61 @@ body { background: #2a2824; font-family: var(--sans); }
   .rate-bar { display: none; }
 }
 
+/* ---------- TRANSACTION MODAL ---------- */
+.row.clickable { cursor: pointer; }
+.row.clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tx-modal {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.tx-modal[hidden] { display: none; }
+.tx-backdrop { position: absolute; inset: 0; background: rgba(20,18,12,.55); }
+.tx-dialog {
+  position: relative; z-index: 1; width: min(680px, 100%); max-height: 84vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--sheet); color: var(--ink); border: 1px solid var(--rule);
+  box-shadow: 0 30px 80px -30px rgba(0,0,0,.6);
+}
+.tx-head {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 22px 24px 14px; border-bottom: 1px solid var(--rule);
+}
+.tx-title {
+  font-family: var(--serif); font-weight: 400; font-size: 24px;
+  margin: 0; letter-spacing: -0.01em;
+}
+.tx-close {
+  margin-left: auto; font-size: 22px; line-height: 1; color: var(--muted);
+  background: transparent; border: none; cursor: pointer; padding: 0 4px;
+}
+.tx-close:hover { color: var(--ink); }
+.tx-totals {
+  display: flex; gap: 22px; flex-wrap: wrap; padding: 12px 24px;
+  font-family: var(--sans); font-size: 12px; color: var(--muted);
+  border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums;
+}
+.tx-totals b { color: var(--ink); font-weight: 600; }
+.tx-scroll { overflow-y: auto; }
+.tx-table { width: 100%; border-collapse: collapse; }
+.tx-table th {
+  font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); padding: 12px 24px; cursor: pointer;
+  user-select: none; border-bottom: 1px solid var(--rule);
+  position: sticky; top: 0; background: var(--sheet); z-index: 1;
+}
+.tx-table th.r { text-align: right; }
+.tx-table th.l { text-align: left; }
+.tx-table th:hover, .tx-table th.active { color: var(--ink); }
+.tx-table td {
+  padding: 11px 24px; font-family: var(--sans); font-size: 13.5px;
+  border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums;
+}
+.tx-table td.r { text-align: right; }
+.tx-table td.l { text-align: left; }
+.tx-amt.pos { color: var(--c-sav); }
+.tx-amt.neg { color: var(--neg); }
+.tx-src { color: var(--muted); font-size: 12px; }
+
 /* ---------- PRINT (paper-friendly Ledger palette) ---------- */
 @media print {
   body { background: #fff; }
@@ -528,7 +611,7 @@ body { background: #2a2824; font-family: var(--sans); }
     --shadow: none; padding: 0;
   }
   .sheet { box-shadow: none; max-width: none; padding: 0; }
-  .editions, .chart-controls, .block-hint { display: none !important; }
+  .editions, .chart-controls, .block-hint, .tx-modal { display: none !important; }
 }
 </style>
 </head>
@@ -624,7 +707,7 @@ body { background: #2a2824; font-family: var(--sans); }
           </thead>
           <tbody>
 {{ range .Rows }}
-            <tr class="row{{ if .Best }} best{{ end }}{{ if .Worst }} worst{{ end }}" data-key="{{ .Key }}" data-income="{{ .Income }}" data-expenses="{{ .Expenses }}" data-savings="{{ .Savings }}" data-rate="{{ .Rate }}">
+            <tr class="row clickable{{ if .Best }} best{{ end }}{{ if .Worst }} worst{{ end }}" data-key="{{ .Key }}" data-income="{{ .Income }}" data-expenses="{{ .Expenses }}" data-savings="{{ .Savings }}" data-rate="{{ .Rate }}" tabindex="0" role="button" aria-label="View {{ .Label }} transactions">
               <td class="l mcell">{{ .Label }}{{ if .Best }}<span class="tag best">best</span>{{ end }}{{ if .Worst }}<span class="tag worst">lean</span>{{ end }}</td>
               <td class="r num">{{ euro .Income }}</td>
               <td class="r num">{{ euro .Expenses }}</td>
@@ -655,6 +738,30 @@ body { background: #2a2824; font-family: var(--sans); }
     <p class="empty">No transactions to report.</p>
 {{ end }}
 
+  </div>
+
+  <div class="tx-modal" id="tx-modal" hidden>
+    <div class="tx-backdrop" data-close></div>
+    <div class="tx-dialog" role="dialog" aria-modal="true" aria-labelledby="tx-title">
+      <div class="tx-head">
+        <h2 class="tx-title" id="tx-title"></h2>
+        <button class="tx-close" data-close aria-label="Close">&times;</button>
+      </div>
+      <div class="tx-totals" id="tx-totals"></div>
+      <div class="tx-scroll">
+        <table class="tx-table" id="tx-table">
+          <thead>
+            <tr>
+              <th class="l active" data-key="k"><span class="th-in">Date<span class="sort-arrow show">▼</span></span></th>
+              <th class="l" data-key="desc"><span class="th-in">Description<span class="sort-arrow">▼</span></span></th>
+              <th class="r" data-key="amt"><span class="th-in">Amount<span class="sort-arrow">▼</span></span></th>
+              <th class="l" data-key="src"><span class="th-in">Source<span class="sort-arrow">▼</span></span></th>
+            </tr>
+          </thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -839,6 +946,97 @@ body { background: #2a2824; font-family: var(--sans); }
   }
 
   render();
+})();
+</script>
+<script>
+(function () {
+  var TX = (window.FIN && window.FIN.tx) || {};
+  var modal = document.getElementById('tx-modal');
+  var ledger = document.getElementById('ledger');
+  if (!modal || !ledger) return;
+
+  var titleEl = document.getElementById('tx-title');
+  var totalsEl = document.getElementById('tx-totals');
+  var bodyEl = document.getElementById('tx-body');
+  var tableEl = document.getElementById('tx-table');
+  var lastTrigger = null;
+  var rows = [];
+  var sort = { key: 'k', dir: 'desc' };
+
+  var eu = function (v) {
+    return (v < 0 ? '−€' : '€') + Math.abs(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+  var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+
+  var renderRows = function () {
+    var sorted = rows.slice().sort(function (a, b) {
+      var av = a[sort.key], bv = b[sort.key], c;
+      if (sort.key === 'amt') { c = av > bv ? 1 : av < bv ? -1 : 0; }
+      else { c = String(av).localeCompare(String(bv)); }
+      return sort.dir === 'asc' ? c : -c;
+    });
+    var html = '';
+    sorted.forEach(function (t) {
+      var cls = t.amt < 0 ? 'neg' : 'pos';
+      html += '<tr><td class="l">' + esc(t.date) + '</td>' +
+              '<td class="l">' + esc(t.desc) + '</td>' +
+              '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
+              '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
+    });
+    bodyEl.innerHTML = html;
+    tableEl.querySelectorAll('th').forEach(function (th) {
+      var on = th.getAttribute('data-key') === sort.key;
+      th.classList.toggle('active', on);
+      th.setAttribute('aria-sort', on ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
+      var ar = th.querySelector('.sort-arrow');
+      if (ar) { ar.classList.toggle('show', on); ar.textContent = sort.dir === 'asc' ? '▲' : '▼'; }
+    });
+  };
+
+  var open = function (tr) {
+    var key = tr.getAttribute('data-key');
+    rows = TX[key] || [];
+    lastTrigger = tr;
+    var mcell = tr.querySelector('.mcell');
+    titleEl.textContent = mcell ? mcell.textContent.replace(/best|lean/gi, '').trim() : key;
+    totalsEl.innerHTML =
+      '<span>Income <b>' + eu(parseFloat(tr.getAttribute('data-income'))) + '</b></span>' +
+      '<span>Expenses <b>' + eu(parseFloat(tr.getAttribute('data-expenses'))) + '</b></span>' +
+      '<span>Savings <b>' + eu(parseFloat(tr.getAttribute('data-savings'))) + '</b></span>';
+    sort = { key: 'k', dir: 'desc' };
+    renderRows();
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    var closeBtn = modal.querySelector('[data-close]');
+    if (closeBtn && closeBtn.focus) closeBtn.focus();
+  };
+
+  var close = function () {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+    if (lastTrigger) lastTrigger.focus();
+  };
+
+  ledger.querySelectorAll('tbody tr').forEach(function (tr) {
+    tr.addEventListener('click', function () { open(tr); });
+    tr.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(tr); }
+    });
+  });
+  modal.querySelectorAll('[data-close]').forEach(function (el) {
+    el.addEventListener('click', close);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !modal.hidden) close();
+  });
+  tableEl.querySelectorAll('th').forEach(function (th) {
+    th.addEventListener('click', function () {
+      var k = th.getAttribute('data-key');
+      if (sort.key === k) { sort.dir = sort.dir === 'asc' ? 'desc' : 'asc'; }
+      else { sort = { key: k, dir: k === 'amt' ? 'desc' : 'asc' }; }
+      renderRows();
+    });
+  });
 })();
 </script>
 </body>
