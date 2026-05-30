@@ -46,6 +46,15 @@ type chartMonth struct {
 	Rate     float64 `json:"rate"`
 }
 
+// txVM is one transaction line inside a month's detail modal, serialized to JS.
+type txVM struct {
+	Date   string  `json:"date"` // "12 May 2026", for display
+	Sort   string  `json:"k"`    // "2026-05-12", for date sorting
+	Desc   string  `json:"desc"`
+	Amount float64 `json:"amt"` // signed: income +, expense −
+	Source string  `json:"src"`
+}
+
 type viewData struct {
 	Generated  string
 	Summary    transaction.Summary
@@ -96,7 +105,26 @@ func buildView(summary transaction.Summary) viewData {
 			Rate:     rateOf(mb.Income, mb.Savings),
 		}
 	}
-	payload, _ := json.Marshal(map[string]any{"months": chart})
+	txByMonth := make(map[string][]txVM, n)
+	for _, mb := range summary.ByMonth {
+		key := fmt.Sprintf("%04d-%02d", mb.Year, int(mb.Month))
+		lines := make([]txVM, len(mb.Transactions))
+		for j, t := range mb.Transactions {
+			amt := t.Amount
+			if t.IsDebit {
+				amt = -amt
+			}
+			lines[j] = txVM{
+				Date:   t.Date.Format("02 January 2006"),
+				Sort:   t.Date.Format("2006-01-02"),
+				Desc:   t.Description,
+				Amount: amt,
+				Source: t.SourceFile,
+			}
+		}
+		txByMonth[key] = lines
+	}
+	payload, _ := json.Marshal(map[string]any{"months": chart, "tx": txByMonth})
 	vd.ChartJSON = template.JS(payload)
 	vd.TrendDown = trendingDown(chart)
 
