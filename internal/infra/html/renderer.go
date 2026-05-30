@@ -987,6 +987,7 @@ body { background: #2a2824; font-family: var(--sans); }
     tableEl.querySelectorAll('th').forEach(function (th) {
       var on = th.getAttribute('data-key') === sort.key;
       th.classList.toggle('active', on);
+      th.setAttribute('aria-sort', on ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none');
       var ar = th.querySelector('.sort-arrow');
       if (ar) { ar.classList.toggle('show', on); ar.textContent = sort.dir === 'asc' ? '▲' : '▼'; }
     });
@@ -1006,6 +1007,8 @@ body { background: #2a2824; font-family: var(--sans); }
     renderRows();
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
+    var closeBtn = modal.querySelector('[data-close]');
+    if (closeBtn && closeBtn.focus) closeBtn.focus();
   };
 
   var close = function () {
