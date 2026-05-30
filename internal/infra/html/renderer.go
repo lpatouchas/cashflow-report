@@ -596,7 +596,7 @@ body { background: #2a2824; font-family: var(--sans); }
 }
 .tx-table td.r { text-align: right; }
 .tx-table td.l { text-align: left; }
-.tx-amt.pos { color: var(--pos); }
+.tx-amt.pos { color: var(--c-sav); }
 .tx-amt.neg { color: var(--neg); }
 .tx-src { color: var(--muted); font-size: 12px; }
 
