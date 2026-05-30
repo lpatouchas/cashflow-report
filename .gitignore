@@ -4,6 +4,9 @@
 # Dropped bank exports (user data — never commit)
 /data/*.csv
 
+# Local backups of bank exports (user data — never commit)
+/bkp/
+
 # Go build artifacts
 /personal-finance
 *.out
