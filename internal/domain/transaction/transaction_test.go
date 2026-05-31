@@ -170,4 +170,36 @@ func TestSummarize(t *testing.T) {
 		require.InDelta(t, 0, got.Averages.Expenses, 0.001) // 0 / 6
 		require.InDelta(t, 10, got.Averages.Savings, 0.001) // (60-0) / 6
 	})
+
+	t.Run("breaks each month down by account, sorted by source", func(t *testing.T) {
+		got := Summarize([]Transaction{
+			tx("a", "zeta.csv", 100, false, may),  // income, account zeta
+			tx("b", "zeta.csv", 40, true, may2),   // expense, account zeta
+			tx("c", "alpha.csv", 200, false, may), // income, account alpha
+			tx("d", "alpha.csv", 10, true, apr),   // expense in a different month
+		})
+
+		require.Len(t, got.ByMonth, 2)
+
+		// May is newest (ByMonth[0]); alpha sorts before zeta.
+		mayMB := got.ByMonth[0]
+		require.Equal(t, time.May, mayMB.Month)
+		require.Len(t, mayMB.ByAccount, 2)
+
+		require.Equal(t, "alpha.csv", mayMB.ByAccount[0].Source)
+		require.InDelta(t, 200, mayMB.ByAccount[0].Income, 0.001)
+		require.InDelta(t, 0, mayMB.ByAccount[0].Expenses, 0.001)
+
+		require.Equal(t, "zeta.csv", mayMB.ByAccount[1].Source)
+		require.InDelta(t, 100, mayMB.ByAccount[1].Income, 0.001)
+		require.InDelta(t, 40, mayMB.ByAccount[1].Expenses, 0.001)
+
+		// April holds only alpha's expense.
+		aprMB := got.ByMonth[1]
+		require.Equal(t, time.April, aprMB.Month)
+		require.Len(t, aprMB.ByAccount, 1)
+		require.Equal(t, "alpha.csv", aprMB.ByAccount[0].Source)
+		require.InDelta(t, 0, aprMB.ByAccount[0].Income, 0.001)
+		require.InDelta(t, 10, aprMB.ByAccount[0].Expenses, 0.001)
+	})
 }
