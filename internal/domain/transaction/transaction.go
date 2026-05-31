@@ -34,8 +34,15 @@ type MonthlyAverages struct {
 	Savings  float64
 }
 
+// AccountBreakdown is per-source income/expense totals within one month.
+type AccountBreakdown struct {
+	Source   string // raw SourceFile, e.g. "kathimerinos.csv"
+	Income   float64
+	Expenses float64
+}
+
 // MonthlyBreakdown holds income/expenses/savings for a single calendar month,
-// along with the transactions that make it up.
+// along with the transactions that make it up and a per-account breakdown.
 type MonthlyBreakdown struct {
 	Year         int
 	Month        time.Month
@@ -43,6 +50,7 @@ type MonthlyBreakdown struct {
 	Expenses     float64
 	Savings      float64
 	Transactions []Transaction
+	ByAccount    []AccountBreakdown
 }
 
 // FilterTransfers removes inter-account transfers and duplicate anomalies.
