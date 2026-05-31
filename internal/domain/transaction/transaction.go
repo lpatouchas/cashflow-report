@@ -34,8 +34,15 @@ type MonthlyAverages struct {
 	Savings  float64
 }
 
+// AccountBreakdown is per-source income/expense totals within one month.
+type AccountBreakdown struct {
+	Source   string // raw SourceFile, e.g. "kathimerinos.csv"
+	Income   float64
+	Expenses float64
+}
+
 // MonthlyBreakdown holds income/expenses/savings for a single calendar month,
-// along with the transactions that make it up.
+// along with the transactions that make it up and a per-account breakdown.
 type MonthlyBreakdown struct {
 	Year         int
 	Month        time.Month
@@ -43,6 +50,7 @@ type MonthlyBreakdown struct {
 	Expenses     float64
 	Savings      float64
 	Transactions []Transaction
+	ByAccount    []AccountBreakdown
 }
 
 // FilterTransfers removes inter-account transfers and duplicate anomalies.
@@ -75,6 +83,8 @@ func Summarize(txns []Transaction) Summary {
 		month time.Month
 	}
 	months := make(map[key]*MonthlyBreakdown)
+	// accounts[monthKey][sourceFile] accumulates per-account totals for that month.
+	accounts := make(map[key]map[string]*AccountBreakdown)
 
 	var s Summary
 	var earliest, latest time.Time
@@ -97,6 +107,7 @@ func Summarize(txns []Transaction) Summary {
 		if mb == nil {
 			mb = &MonthlyBreakdown{Year: k.year, Month: k.month}
 			months[k] = mb
+			accounts[k] = make(map[string]*AccountBreakdown)
 		}
 		if t.IsDebit {
 			mb.Expenses += t.Amount
@@ -104,11 +115,30 @@ func Summarize(txns []Transaction) Summary {
 			mb.Income += t.Amount
 		}
 		mb.Transactions = append(mb.Transactions, t)
+
+		ab := accounts[k][t.SourceFile]
+		if ab == nil {
+			ab = &AccountBreakdown{Source: t.SourceFile}
+			accounts[k][t.SourceFile] = ab
+		}
+		if t.IsDebit {
+			ab.Expenses += t.Amount
+		} else {
+			ab.Income += t.Amount
+		}
 	}
 	s.Savings = s.TotalIncome - s.TotalExpenses
 
-	for _, mb := range months {
+	for k, mb := range months {
 		mb.Savings = mb.Income - mb.Expenses
+		acc := accounts[k]
+		mb.ByAccount = make([]AccountBreakdown, 0, len(acc))
+		for _, ab := range acc {
+			mb.ByAccount = append(mb.ByAccount, *ab)
+		}
+		sort.Slice(mb.ByAccount, func(i, j int) bool {
+			return mb.ByAccount[i].Source < mb.ByAccount[j].Source
+		})
 		s.ByMonth = append(s.ByMonth, *mb)
 	}
 	sort.Slice(s.ByMonth, func(i, j int) bool {

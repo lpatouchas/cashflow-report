@@ -55,6 +55,13 @@ type txVM struct {
 	Source string  `json:"src"`
 }
 
+// acctVM is one account's income/expense totals inside a month's modal, serialized to JS.
+type acctVM struct {
+	Source   string  `json:"src"` // display label, .csv stripped
+	Income   float64 `json:"inc"`
+	Expenses float64 `json:"exp"`
+}
+
 type viewData struct {
 	Generated  string
 	Summary    transaction.Summary
@@ -119,12 +126,25 @@ func buildView(summary transaction.Summary) viewData {
 				Sort:   t.Date.Format("2006-01-02"),
 				Desc:   t.Description,
 				Amount: amt,
-				Source: t.SourceFile,
+				Source: accountLabel(t.SourceFile),
 			}
 		}
 		txByMonth[key] = lines
 	}
-	payload, _ := json.Marshal(map[string]any{"months": chart, "tx": txByMonth})
+	acctByMonth := make(map[string][]acctVM, n)
+	for _, mb := range summary.ByMonth {
+		key := fmt.Sprintf("%04d-%02d", mb.Year, int(mb.Month))
+		accs := make([]acctVM, len(mb.ByAccount))
+		for j, a := range mb.ByAccount {
+			accs[j] = acctVM{
+				Source:   accountLabel(a.Source),
+				Income:   a.Income,
+				Expenses: a.Expenses,
+			}
+		}
+		acctByMonth[key] = accs
+	}
+	payload, _ := json.Marshal(map[string]any{"months": chart, "tx": txByMonth, "acct": acctByMonth})
 	vd.ChartJSON = template.JS(payload)
 	vd.TrendDown = trendingDown(chart)
 
@@ -206,6 +226,15 @@ func monthLabel(mb transaction.MonthlyBreakdown) string {
 
 func monthShort(m time.Month) string {
 	return m.String()[:3]
+}
+
+// accountLabel renders a source filename for display, dropping a trailing
+// ".csv" extension (case-insensitive). Other names pass through unchanged.
+func accountLabel(src string) string {
+	if len(src) >= 4 && strings.EqualFold(src[len(src)-4:], ".csv") {
+		return src[:len(src)-4]
+	}
+	return src
 }
 
 // monthsLabel renders a month count with correct singular/plural wording,
@@ -579,6 +608,18 @@ body { background: #2a2824; font-family: var(--sans); }
   border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums;
 }
 .tx-totals b { color: var(--ink); font-weight: 600; }
+.tx-accounts { padding: 12px 24px 14px; border-bottom: 1px solid var(--hair); }
+.tx-accounts[hidden] { display: none; }
+.tx-acc-head {
+  font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+}
+.tx-acc-row {
+  display: flex; justify-content: space-between; gap: 16px; padding: 4px 0;
+  font-family: var(--sans); font-size: 13px; font-variant-numeric: tabular-nums;
+}
+.tx-acc-name { color: var(--ink); }
+.tx-acc-figs { display: inline-flex; gap: 16px; }
 .tx-scroll { overflow-y: auto; }
 .tx-table { width: 100%; border-collapse: collapse; }
 .tx-table th {
@@ -748,6 +789,10 @@ body { background: #2a2824; font-family: var(--sans); }
         <button class="tx-close" data-close aria-label="Close">&times;</button>
       </div>
       <div class="tx-totals" id="tx-totals"></div>
+      <div class="tx-accounts" id="tx-accounts" hidden>
+        <div class="tx-acc-head">By Account</div>
+        <div class="tx-acc-rows" id="tx-acc-rows"></div>
+      </div>
       <div class="tx-scroll">
         <table class="tx-table" id="tx-table">
           <thead>
@@ -951,12 +996,15 @@ body { background: #2a2824; font-family: var(--sans); }
 <script>
 (function () {
   var TX = (window.FIN && window.FIN.tx) || {};
+  var ACCT = (window.FIN && window.FIN.acct) || {};
   var modal = document.getElementById('tx-modal');
   var ledger = document.getElementById('ledger');
   if (!modal || !ledger) return;
 
   var titleEl = document.getElementById('tx-title');
   var totalsEl = document.getElementById('tx-totals');
+  var acctWrap = document.getElementById('tx-accounts');
+  var acctRowsEl = document.getElementById('tx-acc-rows');
   var bodyEl = document.getElementById('tx-body');
   var tableEl = document.getElementById('tx-table');
   var lastTrigger = null;
@@ -1003,6 +1051,22 @@ body { background: #2a2824; font-family: var(--sans); }
       '<span>Income <b>' + eu(parseFloat(tr.getAttribute('data-income'))) + '</b></span>' +
       '<span>Expenses <b>' + eu(parseFloat(tr.getAttribute('data-expenses'))) + '</b></span>' +
       '<span>Savings <b>' + eu(parseFloat(tr.getAttribute('data-savings'))) + '</b></span>';
+    var accts = ACCT[key] || [];
+    if (accts.length) {
+      var ah = '';
+      accts.forEach(function (a) {
+        ah += '<div class="tx-acc-row"><span class="tx-acc-name">' + esc(a.src) + '</span>' +
+              '<span class="tx-acc-figs">' +
+              '<span class="tx-amt pos">' + eu(a.inc) + '</span>' +
+              '<span class="tx-amt neg">' + eu(-a.exp) + '</span>' +
+              '</span></div>';
+      });
+      acctRowsEl.innerHTML = ah;
+      acctWrap.hidden = false;
+    } else {
+      acctRowsEl.innerHTML = '';
+      acctWrap.hidden = true;
+    }
     sort = { key: 'k', dir: 'desc' };
     renderRows();
     modal.hidden = false;
