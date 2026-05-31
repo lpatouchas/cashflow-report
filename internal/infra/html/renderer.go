@@ -55,6 +55,13 @@ type txVM struct {
 	Source string  `json:"src"`
 }
 
+// acctVM is one account's income/expense totals inside a month's modal, serialized to JS.
+type acctVM struct {
+	Source   string  `json:"src"` // display label, .csv stripped
+	Income   float64 `json:"inc"`
+	Expenses float64 `json:"exp"`
+}
+
 type viewData struct {
 	Generated  string
 	Summary    transaction.Summary
@@ -124,7 +131,20 @@ func buildView(summary transaction.Summary) viewData {
 		}
 		txByMonth[key] = lines
 	}
-	payload, _ := json.Marshal(map[string]any{"months": chart, "tx": txByMonth})
+	acctByMonth := make(map[string][]acctVM, n)
+	for _, mb := range summary.ByMonth {
+		key := fmt.Sprintf("%04d-%02d", mb.Year, int(mb.Month))
+		accs := make([]acctVM, len(mb.ByAccount))
+		for j, a := range mb.ByAccount {
+			accs[j] = acctVM{
+				Source:   accountLabel(a.Source),
+				Income:   a.Income,
+				Expenses: a.Expenses,
+			}
+		}
+		acctByMonth[key] = accs
+	}
+	payload, _ := json.Marshal(map[string]any{"months": chart, "tx": txByMonth, "acct": acctByMonth})
 	vd.ChartJSON = template.JS(payload)
 	vd.TrendDown = trendingDown(chart)
 

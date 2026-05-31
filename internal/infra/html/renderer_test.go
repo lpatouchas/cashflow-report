@@ -239,4 +239,34 @@ func TestRender(t *testing.T) {
 		require.Contains(t, content, `"k":"2026-05-12"`)     // ISO sort key
 		require.Contains(t, content, `"date":"12 May 2026"`) // display date
 	})
+
+	t.Run("embeds per-account breakdown as JSON", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome: 1700, TotalExpenses: 540, Savings: 1160,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{
+					Year: 2026, Month: time.May, Income: 1700, Expenses: 540, Savings: 1160,
+					ByAccount: []transaction.AccountBreakdown{
+						{Source: "kathimerinos.csv", Income: 200, Expenses: 540},
+						{Source: "misthodosia.csv", Income: 1500, Expenses: 0},
+					},
+				},
+			},
+		}
+
+		require.NoError(t, New(out).Render(ctx, summary))
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		content := string(data)
+
+		require.Contains(t, content, `"acct":{`)             // account map present
+		require.Contains(t, content, `"src":"kathimerinos"`) // .csv stripped
+		require.Contains(t, content, `"src":"misthodosia"`)
+		require.Contains(t, content, `"inc":1500`) // misthodosia income
+		require.Contains(t, content, `"exp":540`)  // kathimerinos expenses
+	})
 }
