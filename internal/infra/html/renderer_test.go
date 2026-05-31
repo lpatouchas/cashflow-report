@@ -240,6 +240,28 @@ func TestRender(t *testing.T) {
 		require.Contains(t, content, `"date":"12 May 2026"`) // display date
 	})
 
+	t.Run("renders the By Account block scaffold in the modal", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome: 1500, TotalExpenses: 500, Savings: 1000,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.May, Income: 1500, Expenses: 500, Savings: 1000},
+			},
+		}
+
+		require.NoError(t, New(out).Render(ctx, summary))
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		content := string(data)
+
+		require.Contains(t, content, `id="tx-accounts"`) // block container
+		require.Contains(t, content, "By Account")        // block heading
+		require.Contains(t, content, "window.FIN.acct")    // JS reads the payload
+	})
+
 	t.Run("embeds per-account breakdown as JSON", func(t *testing.T) {
 		dir := t.TempDir()
 		out := filepath.Join(dir, "report.html")
