@@ -119,7 +119,7 @@ func buildView(summary transaction.Summary) viewData {
 				Sort:   t.Date.Format("2006-01-02"),
 				Desc:   t.Description,
 				Amount: amt,
-				Source: t.SourceFile,
+				Source: accountLabel(t.SourceFile),
 			}
 		}
 		txByMonth[key] = lines
@@ -206,6 +206,15 @@ func monthLabel(mb transaction.MonthlyBreakdown) string {
 
 func monthShort(m time.Month) string {
 	return m.String()[:3]
+}
+
+// accountLabel renders a source filename for display, dropping a trailing
+// ".csv" extension (case-insensitive). Other names pass through unchanged.
+func accountLabel(src string) string {
+	if len(src) >= 4 && strings.EqualFold(src[len(src)-4:], ".csv") {
+		return src[:len(src)-4]
+	}
+	return src
 }
 
 // monthsLabel renders a month count with correct singular/plural wording,
