@@ -31,7 +31,7 @@
   <div class="wrap">
     <div class="card">
       <h1>Generate your report</h1>
-      <p>Drop your bank CSV exports below, or click to choose them.</p>
+      <p>Drop your Alpha bank CSV exports below, or click to choose them.</p>
       <form method="POST" action="/generate" enctype="multipart/form-data">
         <label class="drop" id="drop">
           Click or drop CSV files here
@@ -43,12 +43,12 @@
         <p class="hint">
           Exclusion rules leave matching transactions out of your totals — useful for
           movements that aren't real income or spending, like transfers between your own
-          accounts. A transaction is excluded when it matches <em>all</em> of a rule's fields:
-          <strong>match</strong> the description <code>exact</code>ly or by <code>contains</code>;
-          limit to money out (<code>debit</code>), money in (<code>credit</code>), or <code>any</code>;
-          type the <strong>description</strong> to look for; and optionally a <strong>source</strong>
-          file (leave blank to apply to every file). The built-in rule is filled in below — edit it,
-          remove it, or add your own. Tick “Save these rules for next time” to keep your changes.
+          accounts that are not included in the attached account files. A transaction is excluded when
+          it matches <em>all</em> of a rule's fields: <strong>match</strong> the description <code>exactly</code>
+          or by <code>contains</code>; limit to money out (<code>debit</code>), money in (<code>credit</code>),
+          or <code>any</code>;  type the <strong>description</strong> to look for; and optionally a
+          <strong>source</strong> file (leave blank to apply to every file). The built-in rule is filled in
+          below — edit it, remove it, or add your own. Tick “Save these rules for next time” to keep your changes.
         </p>
         <div id="rules">
           {{range .Rules}}
