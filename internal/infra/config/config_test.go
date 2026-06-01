@@ -55,6 +55,7 @@ func TestLoadInvalidSpec(t *testing.T) {
 	_, err := Load(path)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "rule 1")
+	require.Contains(t, err.Error(), path)
 }
 
 func TestDefaultPath(t *testing.T) {
