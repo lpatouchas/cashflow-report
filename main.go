@@ -17,7 +17,7 @@ const (
 
 func run(dataDir, outputPath string) error {
 	repo := csv.New(dataDir)
-	renderer := html.New(outputPath)
+	renderer := html.NewFile(outputPath)
 	svc := report.NewService(repo, renderer)
 	return svc.GenerateReport(context.Background())
 }

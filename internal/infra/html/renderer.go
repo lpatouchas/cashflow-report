@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -13,14 +14,19 @@ import (
 	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
 )
 
-// Renderer writes a Summary to an HTML file at a fixed path.
+// Renderer writes a Summary as HTML to a destination: either a file path
+// (NewFile) or an arbitrary io.Writer (NewWriter).
 type Renderer struct {
-	path string
+	w    io.Writer // when non-nil, render here
+	path string    // otherwise, create this file
 }
 
-func New(path string) *Renderer {
-	return &Renderer{path: path}
-}
+// NewFile returns a Renderer that writes the report to a file at path.
+func NewFile(path string) *Renderer { return &Renderer{path: path} }
+
+// NewWriter returns a Renderer that writes the report to w.
+func NewWriter(w io.Writer) *Renderer { return &Renderer{w: w} }
+
 
 // rowVM is one month rendered into the breakdown table. The data-* attributes
 // it carries let the client sort rows without re-querying the model.
@@ -82,13 +88,19 @@ var tmpl = template.Must(template.New("report").Funcs(template.FuncMap{
 }).Parse(reportHTML))
 
 func (r *Renderer) Render(ctx context.Context, summary transaction.Summary) error {
+	if r.w != nil {
+		return render(r.w, summary)
+	}
 	f, err := os.Create(r.path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
+	return render(f, summary)
+}
 
-	return tmpl.Execute(f, buildView(summary))
+func render(w io.Writer, summary transaction.Summary) error {
+	return tmpl.Execute(w, buildView(summary))
 }
 
 func buildView(summary transaction.Summary) viewData {

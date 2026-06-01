@@ -1,6 +1,7 @@
 package html
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
@@ -58,7 +59,7 @@ func TestRender(t *testing.T) {
 			},
 		}
 
-		err := New(out).Render(ctx, summary)
+		err := NewFile(out).Render(ctx, summary)
 		require.NoError(t, err)
 
 		data, err := os.ReadFile(out)
@@ -75,7 +76,7 @@ func TestRender(t *testing.T) {
 		dir := t.TempDir()
 		out := filepath.Join(dir, "report.html")
 
-		err := New(out).Render(ctx, transaction.Summary{})
+		err := NewFile(out).Render(ctx, transaction.Summary{})
 		require.NoError(t, err)
 
 		data, err := os.ReadFile(out)
@@ -85,7 +86,7 @@ func TestRender(t *testing.T) {
 
 	t.Run("returns error when path is unwritable", func(t *testing.T) {
 		out := filepath.Join(t.TempDir(), "nonexistent-dir", "report.html")
-		err := New(out).Render(ctx, transaction.Summary{})
+		err := NewFile(out).Render(ctx, transaction.Summary{})
 		require.Error(t, err)
 	})
 
@@ -106,7 +107,7 @@ func TestRender(t *testing.T) {
 			},
 		}
 
-		err := New(out).Render(ctx, summary)
+		err := NewFile(out).Render(ctx, summary)
 		require.NoError(t, err)
 
 		data, err := os.ReadFile(out)
@@ -130,7 +131,7 @@ func TestRender(t *testing.T) {
 			Averages: transaction.MonthlyAverages{Months: 1, Income: 1000, Savings: 1000},
 		}
 
-		err := New(out).Render(ctx, summary)
+		err := NewFile(out).Render(ctx, summary)
 		require.NoError(t, err)
 
 		data, err := os.ReadFile(out)
@@ -159,7 +160,7 @@ func TestRender(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, New(out).Render(ctx, summary))
+		require.NoError(t, NewFile(out).Render(ctx, summary))
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
@@ -177,7 +178,7 @@ func TestRender(t *testing.T) {
 		dir := t.TempDir()
 		out := filepath.Join(dir, "report.html")
 
-		err := New(out).Render(ctx, transaction.Summary{})
+		err := NewFile(out).Render(ctx, transaction.Summary{})
 		require.NoError(t, err)
 
 		data, err := os.ReadFile(out)
@@ -196,7 +197,7 @@ func TestRender(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, New(out).Render(ctx, summary))
+		require.NoError(t, NewFile(out).Render(ctx, summary))
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
@@ -225,7 +226,7 @@ func TestRender(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, New(out).Render(ctx, summary))
+		require.NoError(t, NewFile(out).Render(ctx, summary))
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
@@ -251,7 +252,7 @@ func TestRender(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, New(out).Render(ctx, summary))
+		require.NoError(t, NewFile(out).Render(ctx, summary))
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
@@ -279,7 +280,7 @@ func TestRender(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, New(out).Render(ctx, summary))
+		require.NoError(t, NewFile(out).Render(ctx, summary))
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
@@ -290,5 +291,21 @@ func TestRender(t *testing.T) {
 		require.Contains(t, content, `"src":"misthodosia"`)
 		require.Contains(t, content, `"inc":1500`) // misthodosia income
 		require.Contains(t, content, `"exp":540`)  // kathimerinos expenses
+	})
+
+	t.Run("renders to a writer", func(t *testing.T) {
+		var buf bytes.Buffer
+		summary := transaction.Summary{
+			TotalIncome:   1500,
+			TotalExpenses: 500,
+			Savings:       1000,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.May, Income: 1500, Expenses: 500, Savings: 1000},
+			},
+		}
+		err := NewWriter(&buf).Render(ctx, summary)
+		require.NoError(t, err)
+		require.Contains(t, buf.String(), "€1.500,00")
+		require.Contains(t, buf.String(), "May 2026")
 	})
 }
