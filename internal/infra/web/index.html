@@ -11,6 +11,8 @@
   h1 { margin:0 0 8px; font-size:24px; }
   h2 { margin:28px 0 6px; font-size:15px; text-transform:uppercase; letter-spacing:.05em; color:#888; }
   p { color:#555; margin:0 0 24px; }
+  .hint { font-size:13px; line-height:1.5; color:#666; margin:0 0 14px; }
+  .hint code { background:#f0f0f2; padding:1px 5px; border-radius:4px; font-size:12px; }
   .drop { display:block; border:2px dashed #ccc; border-radius:10px; padding:28px; text-align:center; color:#777; cursor:pointer; transition:.15s; }
   .drop.hover { border-color:#111; color:#111; background:#fafafa; }
   #files { display:none; }
@@ -38,6 +40,16 @@
         <ul id="list"></ul>
 
         <h2>Exclusion rules</h2>
+        <p class="hint">
+          Exclusion rules leave matching transactions out of your totals — useful for
+          movements that aren't real income or spending, like transfers between your own
+          accounts. A transaction is excluded when it matches <em>all</em> of a rule's fields:
+          <strong>match</strong> the description <code>exact</code>ly or by <code>contains</code>;
+          limit to money out (<code>debit</code>), money in (<code>credit</code>), or <code>any</code>;
+          type the <strong>description</strong> to look for; and optionally a <strong>source</strong>
+          file (leave blank to apply to every file). The built-in rule is filled in below — edit it,
+          remove it, or add your own. Tick “Save these rules for next time” to keep your changes.
+        </p>
         <div id="rules">
           {{range .Rules}}
           <div class="rule">
