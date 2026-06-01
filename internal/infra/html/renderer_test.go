@@ -259,8 +259,8 @@ func TestRender(t *testing.T) {
 		content := string(data)
 
 		require.Contains(t, content, `id="tx-accounts"`) // block container
-		require.Contains(t, content, "By Account")        // block heading
-		require.Contains(t, content, "window.FIN.acct")    // JS reads the payload
+		require.Contains(t, content, "By Account")       // block heading
+		require.Contains(t, content, "window.FIN.acct")  // JS reads the payload
 	})
 
 	t.Run("embeds per-account breakdown as JSON", func(t *testing.T) {
