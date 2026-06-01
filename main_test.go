@@ -19,7 +19,8 @@ func TestRunGenerate(t *testing.T) {
 		require.NoError(t, os.WriteFile(filepath.Join(dataDir, "acc.csv"), []byte(body), 0o644))
 
 		out := filepath.Join(t.TempDir(), "report.html")
-		require.NoError(t, runGenerate(dataDir, out))
+		cfg := filepath.Join(t.TempDir(), "rules.json")
+		require.NoError(t, runGenerate(dataDir, out, cfg))
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
@@ -27,7 +28,8 @@ func TestRunGenerate(t *testing.T) {
 	})
 
 	t.Run("returns error when no data", func(t *testing.T) {
-		require.Error(t, runGenerate(t.TempDir(), filepath.Join(t.TempDir(), "report.html")))
+		cfg := filepath.Join(t.TempDir(), "rules.json")
+		require.Error(t, runGenerate(t.TempDir(), filepath.Join(t.TempDir(), "report.html"), cfg))
 	})
 }
 
@@ -42,6 +44,19 @@ func TestDispatch(t *testing.T) {
 		require.NoError(t, dispatch([]string{"generate", "--data", dataDir, "--out", out}))
 		_, err := os.Stat(out)
 		require.NoError(t, err)
+	})
+
+	t.Run("generate accepts --config and seeds the file", func(t *testing.T) {
+		dataDir := t.TempDir()
+		body := csvHeader + "\n" +
+			`2;18/05/2026;="SALARY";9;18/5/2026;="ID2";1.550,00;Π;` + "\n"
+		require.NoError(t, os.WriteFile(filepath.Join(dataDir, "acc.csv"), []byte(body), 0o644))
+		out := filepath.Join(t.TempDir(), "report.html")
+		cfg := filepath.Join(t.TempDir(), "rules.json")
+
+		require.NoError(t, dispatch([]string{"generate", "--data", dataDir, "--out", out, "--config", cfg}))
+		require.FileExists(t, out)
+		require.FileExists(t, cfg) // seeded on first load
 	})
 
 	t.Run("help prints usage", func(t *testing.T) {

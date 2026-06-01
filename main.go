@@ -11,6 +11,7 @@ import (
 
 	"github.com/lpatouchas/personal-finance/internal/app/report"
 	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
+	"github.com/lpatouchas/personal-finance/internal/infra/config"
 	"github.com/lpatouchas/personal-finance/internal/infra/csv"
 	"github.com/lpatouchas/personal-finance/internal/infra/html"
 	"github.com/lpatouchas/personal-finance/internal/infra/web"
@@ -32,17 +33,23 @@ Usage:
 serve flags:
   --addr     address to listen on (default ":8080")
   --no-open  do not open the browser
+  --config   exclusion-rules JSON file (default: beside the binary)
 
 generate flags:
-  --data  folder of CSV exports (default "./data")
-  --out   output HTML path (default "./report.html")
+  --data    folder of CSV exports (default "./data")
+  --out     output HTML path (default "./report.html")
+  --config  exclusion-rules JSON file (default: beside the binary)
 `
 
 // runGenerate produces the HTML report from a folder of CSV exports.
-func runGenerate(dataDir, outputPath string) error {
+func runGenerate(dataDir, outputPath, configPath string) error {
+	specs, err := config.Load(configPath)
+	if err != nil {
+		return err
+	}
 	repo := csv.New(dataDir)
 	renderer := html.NewFile(outputPath)
-	svc := report.NewService(repo, renderer, transaction.DefaultExclusionRules())
+	svc := report.NewService(repo, renderer, transaction.CompileRules(specs))
 	if err := svc.GenerateReport(context.Background()); err != nil {
 		return err
 	}
@@ -51,8 +58,8 @@ func runGenerate(dataDir, outputPath string) error {
 }
 
 // runServe starts the local web app and blocks.
-func runServe(addr string, open bool) error {
-	return web.New(transaction.DefaultExclusionRules()).Run(addr, open)
+func runServe(addr, configPath string, open bool) error {
+	return web.New(configPath).Run(addr, open)
 }
 
 // dispatch routes CLI args to a subcommand. With no command it serves the web
@@ -85,19 +92,21 @@ func dispatch(args []string) error {
 		fs.SetOutput(io.Discard)
 		data := fs.String("data", defaultDataDir, "folder of CSV exports")
 		out := fs.String("out", defaultOutput, "output HTML path")
+		cfg := fs.String("config", config.DefaultPath(), "exclusion-rules JSON file")
 		if err := fs.Parse(args); err != nil {
 			return err
 		}
-		return runGenerate(*data, *out)
+		return runGenerate(*data, *out, *cfg)
 	case "serve":
 		fs := flag.NewFlagSet("serve", flag.ContinueOnError)
 		fs.SetOutput(io.Discard)
 		addr := fs.String("addr", defaultAddr, "address to listen on")
 		noOpen := fs.Bool("no-open", false, "do not open the browser")
+		cfg := fs.String("config", config.DefaultPath(), "exclusion-rules JSON file")
 		if err := fs.Parse(args); err != nil {
 			return err
 		}
-		return runServe(*addr, !*noOpen)
+		return runServe(*addr, *cfg, !*noOpen)
 	default:
 		return fmt.Errorf("unknown command %q (try 'personal-finance help')", cmd)
 	}
