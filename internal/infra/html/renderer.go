@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -13,14 +14,18 @@ import (
 	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
 )
 
-// Renderer writes a Summary to an HTML file at a fixed path.
+// Renderer writes a Summary as HTML to a destination: either a file path
+// (NewFile) or an arbitrary io.Writer (NewWriter).
 type Renderer struct {
-	path string
+	w    io.Writer // when non-nil, render here
+	path string    // otherwise, create this file
 }
 
-func New(path string) *Renderer {
-	return &Renderer{path: path}
-}
+// NewFile returns a Renderer that writes the report to a file at path.
+func NewFile(path string) *Renderer { return &Renderer{path: path} }
+
+// NewWriter returns a Renderer that writes the report to w.
+func NewWriter(w io.Writer) *Renderer { return &Renderer{w: w} }
 
 // rowVM is one month rendered into the breakdown table. The data-* attributes
 // it carries let the client sort rows without re-querying the model.
@@ -82,13 +87,19 @@ var tmpl = template.Must(template.New("report").Funcs(template.FuncMap{
 }).Parse(reportHTML))
 
 func (r *Renderer) Render(ctx context.Context, summary transaction.Summary) error {
+	if r.w != nil {
+		return render(r.w, summary)
+	}
 	f, err := os.Create(r.path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
+	return render(f, summary)
+}
 
-	return tmpl.Execute(f, buildView(summary))
+func render(w io.Writer, summary transaction.Summary) error {
+	return tmpl.Execute(w, buildView(summary))
 }
 
 func buildView(summary transaction.Summary) viewData {
@@ -657,7 +668,7 @@ body { background: #2a2824; font-family: var(--sans); }
 </style>
 </head>
 <body>
-<div class="paper" data-edition="ledger" id="paper">
+<div class="paper" data-edition="nocturne" id="paper">
   <div class="sheet">
 
     <header class="masthead">
@@ -665,9 +676,9 @@ body { background: #2a2824; font-family: var(--sans); }
         <span class="kicker">Personal Finance</span>
         <div class="editions">
           <span class="editions-lbl">Edition</span>
-          <button class="ed-btn on" data-ed="ledger" title="Ink on paper">Ledger</button>
+          <button class="ed-btn on" data-ed="nocturne" title="Dark · gold">Nocturne</button>
+          <button class="ed-btn" data-ed="ledger" title="Ink on paper">Ledger</button>
           <button class="ed-btn" data-ed="almanac" title="Warm · oxblood">Almanac</button>
-          <button class="ed-btn" data-ed="nocturne" title="Dark · gold">Nocturne</button>
         </div>
       </div>
       <h1 class="mast-title">The Monthly Review</h1>

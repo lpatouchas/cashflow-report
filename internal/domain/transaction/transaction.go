@@ -64,12 +64,44 @@ func FilterTransfers(txns []Transaction) []Transaction {
 	var kept []Transaction
 	for _, t := range txns {
 		if counts[t.ID] == 1 {
-			//ignore large debits from invest
-			investmentMoves := t.IsDebit && t.SourceFile == "invest.csv" && t.Amount > 2000
-			//ltips := !t.IsDebit && t.SourceFile == "misthodosia.csv" && t.Amount > 12000
-			if !investmentMoves {
-				kept = append(kept, t)
+			kept = append(kept, t)
+		}
+	}
+	return kept
+}
+
+// ExclusionRule reports whether a transaction should be excluded from the
+// report totals. Rules are applied after transfer/duplicate filtering.
+type ExclusionRule func(Transaction) bool
+
+// DefaultExclusionRules are the built-in rules applied until external
+// configuration exists. Today this is the single "external account move" rule:
+// a debit on invest.csv describing an instant transfer out.
+func DefaultExclusionRules() []ExclusionRule {
+	return []ExclusionRule{
+		func(t Transaction) bool {
+			return t.IsDebit && t.Description == "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS" && t.SourceFile == "invest.csv"
+		},
+	}
+}
+
+// ApplyExclusions drops every transaction matching any of the rules.
+// With no rules the input is returned unchanged.
+func ApplyExclusions(txns []Transaction, rules []ExclusionRule) []Transaction {
+	if len(rules) == 0 {
+		return txns
+	}
+	var kept []Transaction
+	for _, t := range txns {
+		excluded := false
+		for _, rule := range rules {
+			if rule(t) {
+				excluded = true
+				break
 			}
+		}
+		if !excluded {
+			kept = append(kept, t)
 		}
 	}
 	return kept

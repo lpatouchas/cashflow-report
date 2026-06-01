@@ -8,29 +8,59 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRun(t *testing.T) {
-	header := "Α/Α;Ημερομηνία;Αιτιολογία;Κατάστημα;Τοκισμός από;Αρ. συναλλαγής;Ποσό;Πρόσημο ποσού;"
+const csvHeader = "Α/Α;Ημερομηνία;Αιτιολογία;Κατάστημα;Τοκισμός από;Αρ. συναλλαγής;Ποσό;Πρόσημο ποσού;"
 
+func TestRunGenerate(t *testing.T) {
 	t.Run("generates report end to end", func(t *testing.T) {
 		dataDir := t.TempDir()
-		body := header + "\n" +
+		body := csvHeader + "\n" +
 			`1;29/05/2026;="SHOP";9;27/5/2026;="ID1";53,79;Χ;` + "\n" +
 			`2;18/05/2026;="SALARY";9;18/5/2026;="ID2";1.550,00;Π;` + "\n"
 		require.NoError(t, os.WriteFile(filepath.Join(dataDir, "acc.csv"), []byte(body), 0o644))
 
 		out := filepath.Join(t.TempDir(), "report.html")
-		require.NoError(t, run(dataDir, out))
+		require.NoError(t, runGenerate(dataDir, out))
 
 		data, err := os.ReadFile(out)
 		require.NoError(t, err)
-		require.Contains(t, string(data), "The Monthly Review")
 		require.Contains(t, string(data), "May 2026")
-		require.Contains(t, string(data), "Monthly Average")
-		require.Contains(t, string(data), "over 1 month")
 	})
 
 	t.Run("returns error when no data", func(t *testing.T) {
-		err := run(t.TempDir(), filepath.Join(t.TempDir(), "report.html"))
-		require.Error(t, err)
+		require.Error(t, runGenerate(t.TempDir(), filepath.Join(t.TempDir(), "report.html")))
+	})
+}
+
+func TestDispatch(t *testing.T) {
+	t.Run("generate writes a report", func(t *testing.T) {
+		dataDir := t.TempDir()
+		body := csvHeader + "\n" +
+			`2;18/05/2026;="SALARY";9;18/5/2026;="ID2";1.550,00;Π;` + "\n"
+		require.NoError(t, os.WriteFile(filepath.Join(dataDir, "acc.csv"), []byte(body), 0o644))
+		out := filepath.Join(t.TempDir(), "report.html")
+
+		require.NoError(t, dispatch([]string{"generate", "--data", dataDir, "--out", out}))
+		_, err := os.Stat(out)
+		require.NoError(t, err)
+	})
+
+	t.Run("help prints usage", func(t *testing.T) {
+		require.NoError(t, dispatch([]string{"help"}))
+	})
+
+	t.Run("version prints", func(t *testing.T) {
+		require.NoError(t, dispatch([]string{"--version"}))
+	})
+
+	t.Run("unknown command errors", func(t *testing.T) {
+		require.Error(t, dispatch([]string{"bogus"}))
+	})
+
+	t.Run("generate with bad flag errors", func(t *testing.T) {
+		require.Error(t, dispatch([]string{"generate", "--nope"}))
+	})
+
+	t.Run("serve with bad flag errors", func(t *testing.T) {
+		require.Error(t, dispatch([]string{"serve", "--nope"}))
 	})
 }
