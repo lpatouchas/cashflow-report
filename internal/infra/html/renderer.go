@@ -27,7 +27,6 @@ func NewFile(path string) *Renderer { return &Renderer{path: path} }
 // NewWriter returns a Renderer that writes the report to w.
 func NewWriter(w io.Writer) *Renderer { return &Renderer{w: w} }
 
-
 // rowVM is one month rendered into the breakdown table. The data-* attributes
 // it carries let the client sort rows without re-querying the model.
 type rowVM struct {
