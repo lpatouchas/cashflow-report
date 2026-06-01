@@ -8,6 +8,18 @@ browser (no terminal needed) or from the command line.
 > `1.550,00`-style amounts shown below). Exports from other banks are not yet
 > supported. See [CSV format](#csv-format) for an example.
 
+## Screenshots
+
+The report summarises total income, expenses, and savings, with a 12-month
+trend chart and a per-month breakdown:
+
+![The Monthly Review — totals, trend chart, and monthly breakdown](docs/sample-images/review.png)
+
+Click any month to open a modal listing that month's individual transactions,
+grouped by account and sortable by column:
+
+![Monthly detail modal — individual transactions for the selected month](docs/sample-images/month-details.png)
+
 ## Quick start (web app)
 
 1. Build the binary once (or download a prebuilt one):

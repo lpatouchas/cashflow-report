@@ -22,3 +22,6 @@
 
 # Claude Code local config
 .claude/
+
+# Superpowers brainstorm mockups (local only)
+.superpowers/
