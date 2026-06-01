@@ -3,7 +3,7 @@ package report
 import (
 	"context"
 
-	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
+	"github.com/lpatouchas/cashflow-report/internal/domain/transaction"
 )
 
 // Renderer is the output port that writes a Summary to its destination.

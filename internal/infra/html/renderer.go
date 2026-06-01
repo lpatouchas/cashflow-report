@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
+	"github.com/lpatouchas/cashflow-report/internal/domain/transaction"
 )
 
 // Renderer writes a Summary as HTML to a destination: either a file path
@@ -673,7 +673,7 @@ body { background: #2a2824; font-family: var(--sans); }
 
     <header class="masthead">
       <div class="mast-top">
-        <span class="kicker">Personal Finance</span>
+        <span class="kicker">Cashflow Report</span>
         <div class="editions">
           <span class="editions-lbl">Edition</span>
           <button class="ed-btn on" data-ed="nocturne" title="Dark · gold">Nocturne</button>

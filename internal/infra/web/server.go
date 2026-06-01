@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lpatouchas/personal-finance/internal/app/report"
-	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
-	"github.com/lpatouchas/personal-finance/internal/infra/config"
-	"github.com/lpatouchas/personal-finance/internal/infra/csv"
-	"github.com/lpatouchas/personal-finance/internal/infra/html"
+	"github.com/lpatouchas/cashflow-report/internal/app/report"
+	"github.com/lpatouchas/cashflow-report/internal/domain/transaction"
+	"github.com/lpatouchas/cashflow-report/internal/infra/config"
+	"github.com/lpatouchas/cashflow-report/internal/infra/csv"
+	"github.com/lpatouchas/cashflow-report/internal/infra/html"
 )
 
 // maxUploadBytes caps the in-memory portion of a multipart upload.

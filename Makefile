@@ -1,4 +1,4 @@
-BINARY := personal-finance
+BINARY := cashflow-report
 
 # Defaults match the README; override on the command line, e.g.
 #   make generate DATA=./exports OUT=./out.html

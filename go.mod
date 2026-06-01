@@ -1,4 +1,4 @@
-module github.com/lpatouchas/personal-finance
+module github.com/lpatouchas/cashflow-report
 
 go 1.23
 

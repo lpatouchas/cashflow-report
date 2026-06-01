@@ -1,4 +1,4 @@
-# personal-finance
+# cashflow-report
 
 Summarises bank transactions into an interactive HTML report. Use it from a
 browser (no terminal needed) or from the command line.
@@ -13,10 +13,10 @@ browser (no terminal needed) or from the command line.
 1. Build the binary once (or download a prebuilt one):
 
    ```bash
-   go build -o personal-finance .
+   go build -o cashflow-report .
    ```
 
-2. Double-click `personal-finance` (or run `./personal-finance`). Your browser
+2. Double-click `cashflow-report` (or run `./cashflow-report`). Your browser
    opens to a local page.
 3. Drop your bank CSV exports onto the page and click **Generate report**.
 
@@ -24,7 +24,7 @@ The server listens on `http://localhost:8080`. Use `--no-open` to skip opening
 the browser, or `--addr :1234` to change the port:
 
 ```bash
-./personal-finance serve --addr :1234 --no-open
+./cashflow-report serve --addr :1234 --no-open
 ```
 
 ## Command line
@@ -32,7 +32,7 @@ the browser, or `--addr :1234` to change the port:
 Generate a report headlessly from a folder of CSV exports:
 
 ```bash
-./personal-finance generate --data ./data --out ./report.html
+./cashflow-report generate --data ./data --out ./report.html
 ```
 
 `--data` defaults to `./data` and `--out` to `./report.html`. Then open the
@@ -46,7 +46,7 @@ different exclusion-rules file.
 A `Makefile` wraps the common commands. Run `make help` to list targets:
 
 ```bash
-make build      # build the personal-finance binary
+make build      # build the cashflow-report binary
 make serve      # build, then start the web app (ADDR=:8080)
 make generate   # build, then generate a report (DATA=./data OUT=./report.html)
 make test       # run the test suite

@@ -11,7 +11,7 @@
 /bkp/
 
 # Go build artifacts
-/personal-finance
+/cashflow-report
 *.out
 
 # macOS
