@@ -14,6 +14,7 @@ import (
 
 	"github.com/lpatouchas/personal-finance/internal/app/report"
 	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
+	"github.com/lpatouchas/personal-finance/internal/infra/config"
 	"github.com/lpatouchas/personal-finance/internal/infra/csv"
 	"github.com/lpatouchas/personal-finance/internal/infra/html"
 )
@@ -21,15 +22,16 @@ import (
 // maxUploadBytes caps the in-memory portion of a multipart upload.
 const maxUploadBytes = 32 << 20 // 32 MiB
 
-// Server serves the local web UI: upload CSVs, generate and view the report.
+// Server serves the local web UI: upload CSVs, edit exclusion rules, generate
+// and view the report.
 type Server struct {
-	rules []transaction.ExclusionRule
-	mux   *http.ServeMux
+	configPath string
+	mux        *http.ServeMux
 }
 
-// New builds a Server that applies the given exclusion rules to each report.
-func New(rules []transaction.ExclusionRule) *Server {
-	s := &Server{rules: rules, mux: http.NewServeMux()}
+// New builds a Server backed by the exclusion-rules file at configPath.
+func New(configPath string) *Server {
+	s := &Server{configPath: configPath, mux: http.NewServeMux()}
 	s.mux.HandleFunc("GET /", s.handleIndex)
 	s.mux.HandleFunc("POST /generate", s.handleGenerate)
 	return s
@@ -40,8 +42,15 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, _ *http.Request) {
+	specs, err := config.Load(s.configPath)
+	if err != nil {
+		http.Error(w, "Couldn't load exclusion rules: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write(indexHTML)
+	if err := indexTmpl.Execute(w, struct{ Rules []ruleView }{toRuleViews(specs)}); err != nil {
+		slog.Error("rendering index", "error", err)
+	}
 }
 
 func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +62,18 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 	if len(files) == 0 {
 		http.Error(w, "Please upload at least one CSV file.", http.StatusBadRequest)
 		return
+	}
+
+	specs, err := parseRules(r.MultipartForm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if r.FormValue("save") != "" {
+		if err := config.Save(s.configPath, specs); err != nil {
+			http.Error(w, "Couldn't save rules: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	tmpDir, err := os.MkdirTemp("", "pf-uploads-*")
@@ -70,7 +91,7 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var buf bytes.Buffer
-	svc := report.NewService(csv.New(tmpDir), html.NewWriter(&buf), s.rules)
+	svc := report.NewService(csv.New(tmpDir), html.NewWriter(&buf), transaction.CompileRules(specs))
 	if err := svc.GenerateReport(context.Background()); err != nil {
 		http.Error(w, "Couldn't generate the report: "+err.Error(), http.StatusInternalServerError)
 		return
