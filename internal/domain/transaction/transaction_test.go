@@ -105,11 +105,10 @@ func TestDefaultExclusionRules(t *testing.T) {
 	d := time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC)
 	rules := DefaultExclusionRules()
 
-	// NOTE: copy the Description literal verbatim from transaction.go (the external
-	// account move rule) — it mixes Greek and Latin look-alike letters and must
-	// match byte-for-byte.
-	move := Transaction{ID: "M", SourceFile: "invest.csv", Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", Amount: 100, IsDebit: true, Date: d}
-	normal := Transaction{ID: "N", SourceFile: "invest.csv", Description: "DIVIDEND", Amount: 50, IsDebit: false, Date: d}
+	// move matches the built-in default rule (see DefaultRuleSpecs in transaction.go);
+	// normal does not and must survive.
+	move := Transaction{ID: "M", SourceFile: "account.csv", Description: "SAMPLE DESCRIPTION", Amount: 100, IsDebit: true, Date: d}
+	normal := Transaction{ID: "N", SourceFile: "account.csv", Description: "DIVIDEND", Amount: 50, IsDebit: false, Date: d}
 
 	got := ApplyExclusions([]Transaction{move, normal}, rules)
 	require.Len(t, got, 1)
@@ -168,11 +167,11 @@ func TestDefaultRuleSpecs(t *testing.T) {
 	require.NoError(t, specs[0].Validate())
 
 	rules := CompileRules(specs)
-	hit := Transaction{Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", IsDebit: true, SourceFile: "invest.csv"}
-	miss := Transaction{Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", IsDebit: true, SourceFile: "other.csv"}
+	hit := Transaction{Description: "SAMPLE DESCRIPTION", IsDebit: true, SourceFile: "account.csv"}
+	miss := Transaction{Description: "SAMPLE DESCRIPTION", IsDebit: true, SourceFile: "other.csv"}
 	require.True(t, rules[0](hit))
 	require.False(t, rules[0](miss))
-	creditMiss := Transaction{Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", IsDebit: false, SourceFile: "invest.csv"}
+	creditMiss := Transaction{Description: "SAMPLE DESCRIPTION", IsDebit: false, SourceFile: "account.csv"}
 	require.False(t, rules[0](creditMiss))
 }
 

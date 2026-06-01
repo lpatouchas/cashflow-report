@@ -1,6 +1,9 @@
 # Generated report
 /report.html
 
+# User-defined exclusion rules (seeded at runtime; may hold private details)
+/exclusion-rules.json
+
 # Dropped bank exports (user data — never commit)
 /data/*.csv
 

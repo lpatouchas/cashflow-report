@@ -58,7 +58,7 @@ func TestHandleIndex(t *testing.T) {
 	require.Contains(t, rec.Body.String(), `action="/generate"`)
 	require.Contains(t, rec.Body.String(), `name="files"`)
 	// the seeded default rule is pre-filled
-	require.Contains(t, rec.Body.String(), "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS")
+	require.Contains(t, rec.Body.String(), "SAMPLE DESCRIPTION")
 }
 
 func TestHandleGenerate(t *testing.T) {

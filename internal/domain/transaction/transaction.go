@@ -149,8 +149,8 @@ func DefaultRuleSpecs() []RuleSpec {
 	return []RuleSpec{{
 		MatchMode:   MatchExact,
 		IsDebit:     &debit,
-		Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS",
-		SourceFile:  "invest.csv",
+		Description: "SAMPLE DESCRIPTION",
+		SourceFile:  "account.csv",
 	}}
 }
 
