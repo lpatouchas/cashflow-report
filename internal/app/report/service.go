@@ -31,7 +31,11 @@ func (s *Service) GenerateReport(ctx context.Context) error {
 		slog.Info("excluded inter-account transfers and duplicates", "count", excluded)
 	}
 
+	before := len(kept)
 	kept = transaction.ApplyExclusions(kept, s.rules)
+	if dropped := before - len(kept); dropped > 0 {
+		slog.Info("excluded transactions by exclusion rule", "count", dropped)
+	}
 
 	summary := transaction.Summarize(kept)
 

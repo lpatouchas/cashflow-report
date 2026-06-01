@@ -94,5 +94,7 @@ func TestGenerateReport(t *testing.T) {
 		require.NoError(t, svc.GenerateReport(ctx))
 		require.InDelta(t, 500, captured.TotalIncome, 0.001)
 		require.InDelta(t, 0, captured.TotalExpenses, 0.001)
+		repo.AssertExpectations(t)
+		renderer.AssertExpectations(t)
 	})
 }
