@@ -89,6 +89,7 @@ const (
 // specified field matches (AND); unspecified fields are wildcards.
 // Description is required. IsDebit nil = any; true = debit only; false = credit
 // only. SourceFile empty = all files.
+// MatchMode is required; the zero value is rejected by Validate.
 type RuleSpec struct {
 	MatchMode   MatchMode `json:"matchMode"`
 	IsDebit     *bool     `json:"isDebit,omitempty"`
@@ -109,8 +110,9 @@ func (s RuleSpec) Validate() error {
 	}
 }
 
-// CompileRule turns a spec into a predicate. An unrecognised match mode is
-// treated as exact (the safe default); callers should Validate first.
+// CompileRule turns a spec into a predicate that ANDs its specified fields.
+// Call Validate first: CompileRule assumes a valid spec and treats any mode
+// other than MatchContains as an exact-description match.
 func CompileRule(s RuleSpec) ExclusionRule {
 	return func(t Transaction) bool {
 		if s.IsDebit != nil && t.IsDebit != *s.IsDebit {
@@ -153,7 +155,7 @@ func DefaultRuleSpecs() []RuleSpec {
 }
 
 // DefaultExclusionRules are the built-in rules applied until external
-// configuration overrides them. Equivalent to CompileRules(DefaultRuleSpecs()).
+// configuration replaces them. Equivalent to CompileRules(DefaultRuleSpecs()).
 func DefaultExclusionRules() []ExclusionRule {
 	return CompileRules(DefaultRuleSpecs())
 }

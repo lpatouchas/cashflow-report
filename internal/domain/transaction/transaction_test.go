@@ -172,6 +172,8 @@ func TestDefaultRuleSpecs(t *testing.T) {
 	miss := Transaction{Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", IsDebit: true, SourceFile: "other.csv"}
 	require.True(t, rules[0](hit))
 	require.False(t, rules[0](miss))
+	creditMiss := Transaction{Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", IsDebit: false, SourceFile: "invest.csv"}
+	require.False(t, rules[0](creditMiss))
 }
 
 func TestSummarize(t *testing.T) {
