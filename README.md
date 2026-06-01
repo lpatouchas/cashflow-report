@@ -41,6 +41,21 @@ generated `report.html`.
 Use `--config path/to/rules.json` with `generate` or `serve` to choose a
 different exclusion-rules file.
 
+### Sample data
+
+A small fictional dataset lives in [`sample-data/`](sample-data/) (a `checking`
+and a `savings` account, calendar year 2025) so you can try the report without
+your own exports:
+
+```bash
+./cashflow-report generate --data ./sample-data --out ./report.html
+```
+
+It averages €1,800/month income and €1,500/month expenses, with a December
+double salary (the Greek *Δώρο Χριστουγέννων*). The monthly transfers from
+checking to savings share a transaction ID across both files, so they show up
+as excluded inter-account transfers rather than income/expenses.
+
 ## Using make
 
 A `Makefile` wraps the common commands. Run `make help` to list targets:
