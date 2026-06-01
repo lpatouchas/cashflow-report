@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/lpatouchas/personal-finance/internal/app/report"
+	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
 	"github.com/lpatouchas/personal-finance/internal/infra/csv"
 	"github.com/lpatouchas/personal-finance/internal/infra/html"
 )
@@ -18,7 +19,7 @@ const (
 func run(dataDir, outputPath string) error {
 	repo := csv.New(dataDir)
 	renderer := html.NewFile(outputPath)
-	svc := report.NewService(repo, renderer)
+	svc := report.NewService(repo, renderer, transaction.DefaultExclusionRules())
 	return svc.GenerateReport(context.Background())
 }
 

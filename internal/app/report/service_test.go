@@ -34,7 +34,7 @@ func TestGenerateReport(t *testing.T) {
 			}).
 			Return(nil)
 
-		svc := NewService(repo, renderer)
+		svc := NewService(repo, renderer, nil)
 		err := svc.GenerateReport(ctx)
 
 		require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestGenerateReport(t *testing.T) {
 
 		renderer := &MockRenderer{}
 
-		svc := NewService(repo, renderer)
+		svc := NewService(repo, renderer, nil)
 		err := svc.GenerateReport(ctx)
 
 		require.Error(t, err)
@@ -65,9 +65,34 @@ func TestGenerateReport(t *testing.T) {
 		renderer := &MockRenderer{}
 		renderer.On("Render", ctx, mock.Anything).Return(errors.New("write failed"))
 
-		svc := NewService(repo, renderer)
+		svc := NewService(repo, renderer, nil)
 		err := svc.GenerateReport(ctx)
 
 		require.Error(t, err)
+	})
+
+	t.Run("applies exclusion rules before summarizing", func(t *testing.T) {
+		txns := []transaction.Transaction{
+			{ID: "INC", SourceFile: "a.csv", Amount: 500, IsDebit: false, Date: d},
+			{ID: "DROP", SourceFile: "a.csv", Amount: 200, IsDebit: true, Date: d},
+		}
+		repo := &transaction.MockRepository{}
+		repo.On("GetAll", ctx).Return(txns, nil)
+
+		var captured transaction.Summary
+		renderer := &MockRenderer{}
+		renderer.On("Render", ctx, mock.Anything).
+			Run(func(args mock.Arguments) {
+				captured = args.Get(1).(transaction.Summary)
+			}).
+			Return(nil)
+
+		rules := []transaction.ExclusionRule{
+			func(t transaction.Transaction) bool { return t.ID == "DROP" },
+		}
+		svc := NewService(repo, renderer, rules)
+		require.NoError(t, svc.GenerateReport(ctx))
+		require.InDelta(t, 500, captured.TotalIncome, 0.001)
+		require.InDelta(t, 0, captured.TotalExpenses, 0.001)
 	})
 }

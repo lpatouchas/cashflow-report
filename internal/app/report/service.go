@@ -8,14 +8,16 @@ import (
 	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
 )
 
-// Service orchestrates report generation: load → filter → summarize → render.
+// Service orchestrates report generation:
+// load → filter transfers → apply exclusion rules → summarize → render.
 type Service struct {
 	repo     transaction.Repository
 	renderer Renderer
+	rules    []transaction.ExclusionRule
 }
 
-func NewService(repo transaction.Repository, renderer Renderer) *Service {
-	return &Service{repo: repo, renderer: renderer}
+func NewService(repo transaction.Repository, renderer Renderer, rules []transaction.ExclusionRule) *Service {
+	return &Service{repo: repo, renderer: renderer, rules: rules}
 }
 
 func (s *Service) GenerateReport(ctx context.Context) error {
@@ -28,6 +30,8 @@ func (s *Service) GenerateReport(ctx context.Context) error {
 	if excluded := len(all) - len(kept); excluded > 0 {
 		slog.Info("excluded inter-account transfers and duplicates", "count", excluded)
 	}
+
+	kept = transaction.ApplyExclusions(kept, s.rules)
 
 	summary := transaction.Summarize(kept)
 
