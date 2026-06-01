@@ -58,6 +58,8 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Couldn't read the upload: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	// Uploads above maxUploadBytes spill to disk; the stdlib leaves cleanup to us.
+	defer func() { _ = r.MultipartForm.RemoveAll() }()
 	files := r.MultipartForm.File["files"]
 	if len(files) == 0 {
 		http.Error(w, "Please upload at least one CSV file.", http.StatusBadRequest)
