@@ -5,7 +5,7 @@ import (
 	"mime/multipart"
 	"strings"
 
-	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
+	"github.com/lpatouchas/cashflow-report/internal/domain/transaction"
 )
 
 // ruleView is one row in the rules editor, with IsDebit flattened to a select

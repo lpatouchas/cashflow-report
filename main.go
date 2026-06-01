@@ -9,12 +9,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/lpatouchas/personal-finance/internal/app/report"
-	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
-	"github.com/lpatouchas/personal-finance/internal/infra/config"
-	"github.com/lpatouchas/personal-finance/internal/infra/csv"
-	"github.com/lpatouchas/personal-finance/internal/infra/html"
-	"github.com/lpatouchas/personal-finance/internal/infra/web"
+	"github.com/lpatouchas/cashflow-report/internal/app/report"
+	"github.com/lpatouchas/cashflow-report/internal/domain/transaction"
+	"github.com/lpatouchas/cashflow-report/internal/infra/config"
+	"github.com/lpatouchas/cashflow-report/internal/infra/csv"
+	"github.com/lpatouchas/cashflow-report/internal/infra/html"
+	"github.com/lpatouchas/cashflow-report/internal/infra/web"
 )
 
 const (
@@ -23,12 +23,12 @@ const (
 	defaultAddr    = ":8080"
 )
 
-const usage = `personal-finance — summarise bank CSV exports into an HTML report
+const usage = `cashflow-report — summarise bank CSV exports into an HTML report
 
 Usage:
-  personal-finance                   Start the web app (opens browser, upload CSVs)
-  personal-finance serve [flags]     Start the web app
-  personal-finance generate [flags]  Generate report.html from a data folder
+  cashflow-report                   Start the web app (opens browser, upload CSVs)
+  cashflow-report serve [flags]     Start the web app
+  cashflow-report generate [flags]  Generate report.html from a data folder
 
 serve flags:
   --addr     address to listen on (default ":8080")
@@ -85,7 +85,7 @@ func dispatch(args []string) error {
 		fmt.Print(usage)
 		return nil
 	case "version":
-		fmt.Println("personal-finance dev")
+		fmt.Println("cashflow-report dev")
 		return nil
 	case "generate":
 		fs := flag.NewFlagSet("generate", flag.ContinueOnError)
@@ -108,7 +108,7 @@ func dispatch(args []string) error {
 		}
 		return runServe(*addr, *cfg, !*noOpen)
 	default:
-		return fmt.Errorf("unknown command %q (try 'personal-finance help')", cmd)
+		return fmt.Errorf("unknown command %q (try 'cashflow-report help')", cmd)
 	}
 }
 

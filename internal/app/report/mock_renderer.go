@@ -3,7 +3,7 @@ package report
 import (
 	"context"
 
-	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
+	"github.com/lpatouchas/cashflow-report/internal/domain/transaction"
 	"github.com/stretchr/testify/mock"
 )
 

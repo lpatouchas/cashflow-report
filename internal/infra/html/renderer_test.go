@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lpatouchas/personal-finance/internal/domain/transaction"
+	"github.com/lpatouchas/cashflow-report/internal/domain/transaction"
 	"github.com/stretchr/testify/require"
 )
 

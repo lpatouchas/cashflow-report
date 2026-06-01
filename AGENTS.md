@@ -1,4 +1,4 @@
-# Personal Finance — Agent Instructions
+# Cashflow Report — Agent Instructions
 
 
 ## Architecture
@@ -75,7 +75,7 @@ domain/ (innermost) ← app/ ← infra/ (outermost)
 
 ## Tech Stack
 
-- **Module:** `github.com/lpatouchas/personal-finance`
+- **Module:** `github.com/lpatouchas/cashflow-report`
 - **Language:** Go 1.23
 - **Router:** chi/v5
 - **Database:** PostgreSQL via pgx/v5
