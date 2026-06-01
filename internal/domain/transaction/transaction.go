@@ -1,7 +1,10 @@
 package transaction
 
 import (
+	"errors"
+	"fmt"
 	"sort"
+	"strings"
 	"time"
 )
 
@@ -74,15 +77,87 @@ func FilterTransfers(txns []Transaction) []Transaction {
 // report totals. Rules are applied after transfer/duplicate filtering.
 type ExclusionRule func(Transaction) bool
 
-// DefaultExclusionRules are the built-in rules applied until external
-// configuration exists. Today this is the single "external account move" rule:
-// a debit on invest.csv describing an instant transfer out.
-func DefaultExclusionRules() []ExclusionRule {
-	return []ExclusionRule{
-		func(t Transaction) bool {
-			return t.IsDebit && t.Description == "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS" && t.SourceFile == "invest.csv"
-		},
+// MatchMode controls how a RuleSpec's Description is compared.
+type MatchMode string
+
+const (
+	MatchExact    MatchMode = "exact"
+	MatchContains MatchMode = "contains"
+)
+
+// RuleSpec is a serializable exclusion rule. A transaction matches when every
+// specified field matches (AND); unspecified fields are wildcards.
+// Description is required. IsDebit nil = any; true = debit only; false = credit
+// only. SourceFile empty = all files.
+// MatchMode is required; the zero value is rejected by Validate.
+type RuleSpec struct {
+	MatchMode   MatchMode `json:"matchMode"`
+	IsDebit     *bool     `json:"isDebit,omitempty"`
+	Description string    `json:"description"`
+	SourceFile  string    `json:"sourceFile,omitempty"`
+}
+
+// Validate reports whether the spec is well-formed.
+func (s RuleSpec) Validate() error {
+	if strings.TrimSpace(s.Description) == "" {
+		return errors.New("description is required")
 	}
+	switch s.MatchMode {
+	case MatchExact, MatchContains:
+		return nil
+	default:
+		return fmt.Errorf("unknown match mode %q (use %q or %q)", s.MatchMode, MatchExact, MatchContains)
+	}
+}
+
+// CompileRule turns a spec into a predicate that ANDs its specified fields.
+// Call Validate first: CompileRule assumes a valid spec and treats any mode
+// other than MatchContains as an exact-description match.
+func CompileRule(s RuleSpec) ExclusionRule {
+	return func(t Transaction) bool {
+		if s.IsDebit != nil && t.IsDebit != *s.IsDebit {
+			return false
+		}
+		if s.MatchMode == MatchContains {
+			if !strings.Contains(t.Description, s.Description) {
+				return false
+			}
+		} else if t.Description != s.Description {
+			return false
+		}
+		if s.SourceFile != "" && t.SourceFile != s.SourceFile {
+			return false
+		}
+		return true
+	}
+}
+
+// CompileRules compiles specs into predicates. It does not validate; validate
+// specs before compiling.
+func CompileRules(specs []RuleSpec) []ExclusionRule {
+	rules := make([]ExclusionRule, 0, len(specs))
+	for _, s := range specs {
+		rules = append(rules, CompileRule(s))
+	}
+	return rules
+}
+
+// DefaultRuleSpecs is the built-in rule set expressed as data: the single
+// "external account move" rule (an instant-transfer debit on invest.csv).
+func DefaultRuleSpecs() []RuleSpec {
+	debit := true
+	return []RuleSpec{{
+		MatchMode:   MatchExact,
+		IsDebit:     &debit,
+		Description: "SAMPLE DESCRIPTION",
+		SourceFile:  "account.csv",
+	}}
+}
+
+// DefaultExclusionRules are the built-in rules applied until external
+// configuration replaces them. Equivalent to CompileRules(DefaultRuleSpecs()).
+func DefaultExclusionRules() []ExclusionRule {
+	return CompileRules(DefaultRuleSpecs())
 }
 
 // ApplyExclusions drops every transaction matching any of the rules.

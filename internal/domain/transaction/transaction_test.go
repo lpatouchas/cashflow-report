@@ -105,15 +105,74 @@ func TestDefaultExclusionRules(t *testing.T) {
 	d := time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC)
 	rules := DefaultExclusionRules()
 
-	// NOTE: copy the Description literal verbatim from transaction.go (the external
-	// account move rule) — it mixes Greek and Latin look-alike letters and must
-	// match byte-for-byte.
-	move := Transaction{ID: "M", SourceFile: "invest.csv", Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", Amount: 100, IsDebit: true, Date: d}
-	normal := Transaction{ID: "N", SourceFile: "invest.csv", Description: "DIVIDEND", Amount: 50, IsDebit: false, Date: d}
+	// move matches the built-in default rule (see DefaultRuleSpecs in transaction.go);
+	// normal does not and must survive.
+	move := Transaction{ID: "M", SourceFile: "account.csv", Description: "SAMPLE DESCRIPTION", Amount: 100, IsDebit: true, Date: d}
+	normal := Transaction{ID: "N", SourceFile: "account.csv", Description: "DIVIDEND", Amount: 50, IsDebit: false, Date: d}
 
 	got := ApplyExclusions([]Transaction{move, normal}, rules)
 	require.Len(t, got, 1)
 	require.Equal(t, "N", got[0].ID)
+}
+
+func boolPtr(b bool) *bool { return &b }
+
+func TestRuleSpecValidate(t *testing.T) {
+	require.NoError(t, RuleSpec{MatchMode: MatchExact, Description: "x"}.Validate())
+	require.NoError(t, RuleSpec{MatchMode: MatchContains, Description: "x"}.Validate())
+
+	err := RuleSpec{MatchMode: MatchExact, Description: "  "}.Validate()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "description")
+
+	err = RuleSpec{MatchMode: "regex", Description: "x"}.Validate()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "match mode")
+}
+
+func TestCompileRule(t *testing.T) {
+	debit := Transaction{Description: "PAY", IsDebit: true, SourceFile: "a.csv"}
+	credit := Transaction{Description: "PAY", IsDebit: false, SourceFile: "b.csv"}
+
+	// exact description only (isDebit any, no source)
+	r := CompileRule(RuleSpec{MatchMode: MatchExact, Description: "PAY"})
+	require.True(t, r(debit))
+	require.True(t, r(credit))
+	require.False(t, r(Transaction{Description: "PAYMENT"}))
+
+	// contains
+	r = CompileRule(RuleSpec{MatchMode: MatchContains, Description: "AY"})
+	require.True(t, r(Transaction{Description: "PAYMENT"}))
+	require.False(t, r(Transaction{Description: "NOPE"}))
+
+	// debit-only
+	r = CompileRule(RuleSpec{MatchMode: MatchExact, Description: "PAY", IsDebit: boolPtr(true)})
+	require.True(t, r(debit))
+	require.False(t, r(credit))
+
+	// credit-only
+	r = CompileRule(RuleSpec{MatchMode: MatchExact, Description: "PAY", IsDebit: boolPtr(false)})
+	require.False(t, r(debit))
+	require.True(t, r(credit))
+
+	// source-file scoped
+	r = CompileRule(RuleSpec{MatchMode: MatchExact, Description: "PAY", SourceFile: "a.csv"})
+	require.True(t, r(debit))
+	require.False(t, r(credit)) // credit is on b.csv
+}
+
+func TestDefaultRuleSpecs(t *testing.T) {
+	specs := DefaultRuleSpecs()
+	require.Len(t, specs, 1)
+	require.NoError(t, specs[0].Validate())
+
+	rules := CompileRules(specs)
+	hit := Transaction{Description: "SAMPLE DESCRIPTION", IsDebit: true, SourceFile: "account.csv"}
+	miss := Transaction{Description: "SAMPLE DESCRIPTION", IsDebit: true, SourceFile: "other.csv"}
+	require.True(t, rules[0](hit))
+	require.False(t, rules[0](miss))
+	creditMiss := Transaction{Description: "SAMPLE DESCRIPTION", IsDebit: false, SourceFile: "account.csv"}
+	require.False(t, rules[0](creditMiss))
 }
 
 func TestSummarize(t *testing.T) {
