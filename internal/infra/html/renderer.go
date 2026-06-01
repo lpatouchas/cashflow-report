@@ -668,7 +668,7 @@ body { background: #2a2824; font-family: var(--sans); }
 </style>
 </head>
 <body>
-<div class="paper" data-edition="ledger" id="paper">
+<div class="paper" data-edition="nocturne" id="paper">
   <div class="sheet">
 
     <header class="masthead">
@@ -676,9 +676,9 @@ body { background: #2a2824; font-family: var(--sans); }
         <span class="kicker">Personal Finance</span>
         <div class="editions">
           <span class="editions-lbl">Edition</span>
-          <button class="ed-btn on" data-ed="ledger" title="Ink on paper">Ledger</button>
+          <button class="ed-btn on" data-ed="nocturne" title="Dark · gold">Nocturne</button>
+          <button class="ed-btn" data-ed="ledger" title="Ink on paper">Ledger</button>
           <button class="ed-btn" data-ed="almanac" title="Warm · oxblood">Almanac</button>
-          <button class="ed-btn" data-ed="nocturne" title="Dark · gold">Nocturne</button>
         </div>
       </div>
       <h1 class="mast-title">The Monthly Review</h1>
