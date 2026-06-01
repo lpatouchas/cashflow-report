@@ -33,6 +33,9 @@ Generate a report headlessly from a folder of CSV exports:
 `--data` defaults to `./data` and `--out` to `./report.html`. Then open the
 generated `report.html`.
 
+Use `--config path/to/rules.json` with `generate` or `serve` to choose a
+different exclusion-rules file.
+
 ## What it does
 
 - Loads every `*.csv` in the data folder (semicolon-separated Greek bank export
@@ -40,8 +43,12 @@ generated `report.html`.
 - Excludes inter-account transfers: any transaction ID (`Αρ. συναλλαγής`)
   appearing more than once across the loaded files is treated as a transfer or
   duplicate and left out of the totals.
-- Applies built-in exclusion rules (e.g. instant-transfer moves out of the
-  investment account). External, user-defined rules are planned.
+- Applies user-defined exclusion rules. Rules live in `exclusion-rules.json`
+  (created next to the binary on first run, pre-filled with the built-in
+  instant-transfer rule). Each rule matches a transaction by description
+  (exact or contains), optionally constrained to debit/credit and a single
+  source file. Edit rules right on the web page (tick "Save these rules for
+  next time" to persist them), or point at a different file with `--config`.
 - Reports total income, expenses, and savings, plus a per-month breakdown.
 - The report's monthly table is interactive: click a month to open a modal
   listing that month's individual transactions, sortable by any column.
