@@ -116,6 +116,64 @@ func TestDefaultExclusionRules(t *testing.T) {
 	require.Equal(t, "N", got[0].ID)
 }
 
+func boolPtr(b bool) *bool { return &b }
+
+func TestRuleSpecValidate(t *testing.T) {
+	require.NoError(t, RuleSpec{MatchMode: MatchExact, Description: "x"}.Validate())
+	require.NoError(t, RuleSpec{MatchMode: MatchContains, Description: "x"}.Validate())
+
+	err := RuleSpec{MatchMode: MatchExact, Description: "  "}.Validate()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "description")
+
+	err = RuleSpec{MatchMode: "regex", Description: "x"}.Validate()
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "match mode")
+}
+
+func TestCompileRule(t *testing.T) {
+	debit := Transaction{Description: "PAY", IsDebit: true, SourceFile: "a.csv"}
+	credit := Transaction{Description: "PAY", IsDebit: false, SourceFile: "b.csv"}
+
+	// exact description only (isDebit any, no source)
+	r := CompileRule(RuleSpec{MatchMode: MatchExact, Description: "PAY"})
+	require.True(t, r(debit))
+	require.True(t, r(credit))
+	require.False(t, r(Transaction{Description: "PAYMENT"}))
+
+	// contains
+	r = CompileRule(RuleSpec{MatchMode: MatchContains, Description: "AY"})
+	require.True(t, r(Transaction{Description: "PAYMENT"}))
+	require.False(t, r(Transaction{Description: "NOPE"}))
+
+	// debit-only
+	r = CompileRule(RuleSpec{MatchMode: MatchExact, Description: "PAY", IsDebit: boolPtr(true)})
+	require.True(t, r(debit))
+	require.False(t, r(credit))
+
+	// credit-only
+	r = CompileRule(RuleSpec{MatchMode: MatchExact, Description: "PAY", IsDebit: boolPtr(false)})
+	require.False(t, r(debit))
+	require.True(t, r(credit))
+
+	// source-file scoped
+	r = CompileRule(RuleSpec{MatchMode: MatchExact, Description: "PAY", SourceFile: "a.csv"})
+	require.True(t, r(debit))
+	require.False(t, r(credit)) // credit is on b.csv
+}
+
+func TestDefaultRuleSpecs(t *testing.T) {
+	specs := DefaultRuleSpecs()
+	require.Len(t, specs, 1)
+	require.NoError(t, specs[0].Validate())
+
+	rules := CompileRules(specs)
+	hit := Transaction{Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", IsDebit: true, SourceFile: "invest.csv"}
+	miss := Transaction{Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", IsDebit: true, SourceFile: "other.csv"}
+	require.True(t, rules[0](hit))
+	require.False(t, rules[0](miss))
+}
+
 func TestSummarize(t *testing.T) {
 	may := time.Date(2026, time.May, 10, 0, 0, 0, 0, time.UTC)
 	may2 := time.Date(2026, time.May, 20, 0, 0, 0, 0, time.UTC)
