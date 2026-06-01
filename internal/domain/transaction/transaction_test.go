@@ -64,6 +64,41 @@ func TestFilterTransfers(t *testing.T) {
 	}
 }
 
+func TestApplyExclusions(t *testing.T) {
+	d := time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC)
+
+	t.Run("nil rules keep everything", func(t *testing.T) {
+		in := []Transaction{tx("A", "f.csv", 10, true, d)}
+		require.Equal(t, in, ApplyExclusions(in, nil))
+	})
+
+	t.Run("matching transactions are dropped", func(t *testing.T) {
+		rule := func(tr Transaction) bool { return tr.SourceFile == "drop.csv" }
+		in := []Transaction{
+			tx("A", "keep.csv", 10, true, d),
+			tx("B", "drop.csv", 20, true, d),
+		}
+		got := ApplyExclusions(in, []ExclusionRule{rule})
+		require.Len(t, got, 1)
+		require.Equal(t, "A", got[0].ID)
+	})
+}
+
+func TestDefaultExclusionRules(t *testing.T) {
+	d := time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC)
+	rules := DefaultExclusionRules()
+
+	// NOTE: copy the Description literal verbatim from transaction.go (the external
+	// account move rule) — it mixes Greek and Latin look-alike letters and must
+	// match byte-for-byte.
+	move := Transaction{ID: "M", SourceFile: "invest.csv", Description: "ΕΝΤΟΛΗ ΙΝSΤΑΝΤ ΤRΑΝS", Amount: 100, IsDebit: true, Date: d}
+	normal := Transaction{ID: "N", SourceFile: "invest.csv", Description: "DIVIDEND", Amount: 50, IsDebit: false, Date: d}
+
+	got := ApplyExclusions([]Transaction{move, normal}, rules)
+	require.Len(t, got, 1)
+	require.Equal(t, "N", got[0].ID)
+}
+
 func TestSummarize(t *testing.T) {
 	may := time.Date(2026, time.May, 10, 0, 0, 0, 0, time.UTC)
 	may2 := time.Date(2026, time.May, 20, 0, 0, 0, 0, time.UTC)
