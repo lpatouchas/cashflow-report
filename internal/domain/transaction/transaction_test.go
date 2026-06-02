@@ -79,6 +79,27 @@ func TestFilterTransfers(t *testing.T) {
 			},
 			wantIDs: nil,
 		},
+		{
+			// Guards the "count == 1" logic against groups larger than a pair:
+			// every member of a 3-way collision must be dropped.
+			name: "triple duplicate is fully excluded",
+			input: []Transaction{
+				tx("D3", "f1.csv", 7, true, d),
+				tx("D3", "f1.csv", 7, true, d),
+				tx("D3", "f1.csv", 7, true, d),
+			},
+			wantIDs: nil,
+		},
+		{
+			// Rounding must not over-collapse: a genuine one-cent difference
+			// stays distinct, so neither row is treated as a pair.
+			name: "amounts one cent apart are kept",
+			input: []Transaction{
+				tx("C", "f1.csv", 100.00, true, d),
+				tx("C", "f2.csv", 100.01, false, d),
+			},
+			wantIDs: []string{"C", "C"},
+		},
 	}
 
 	for _, tc := range tests {
@@ -91,6 +112,23 @@ func TestFilterTransfers(t *testing.T) {
 			require.Equal(t, tc.wantIDs, gotIDs)
 		})
 	}
+
+	// One bank reference can carry a matched transfer pair (same amount,
+	// opposite legs) AND the order fee (a different amount). The two legs
+	// collide on (ID, amount) and drop; the fee has a unique key and survives
+	// as a real expense. This is the real-world shape the old ID-only rule got
+	// wrong — it dropped the fee too. The wantIDs-only table can't assert which
+	// row survives (all three share an ID), so check the amount directly.
+	t.Run("transfer pair and its fee share one id: legs drop, fee survives", func(t *testing.T) {
+		d := time.Date(2026, time.May, 1, 0, 0, 0, 0, time.UTC)
+		got := FilterTransfers([]Transaction{
+			tx("M", "checking.csv", 800, true, d),  // transfer leg
+			tx("M", "savings.csv", 800, false, d),  // matching leg (opposite sign)
+			tx("M", "checking.csv", 0.50, true, d), // the order fee
+		})
+		require.Len(t, got, 1)
+		require.Equal(t, 0.50, got[0].Amount)
+	})
 }
 
 func TestApplyExclusions(t *testing.T) {
