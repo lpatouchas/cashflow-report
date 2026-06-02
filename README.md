@@ -20,9 +20,30 @@ grouped by account and sortable by column:
 
 ![Monthly detail modal — individual transactions for the selected month](docs/sample-images/month-details.png)
 
+## Download
+
+Prebuilt binaries are published automatically on the
+[**Releases**](https://github.com/lpatouchas/cashflow-report/releases) page. A
+GitHub Actions workflow ([`.github/workflows/release.yml`](.github/workflows/release.yml))
+cross-compiles the app for Windows, macOS, and Linux on every version tag and
+attaches the binaries — plus a `checksums.txt` — to the corresponding release. No
+Go toolchain needed: download the file for your platform and run it.
+
+| Platform                        | File                                |
+| ------------------------------- | ----------------------------------- |
+| Windows (most PCs)              | `cashflow-report-windows-amd64.exe` |
+| Windows on ARM                  | `cashflow-report-windows-arm64.exe` |
+| macOS (Apple Silicon, M1–M4)    | `cashflow-report-darwin-arm64`      |
+| macOS (Intel)                   | `cashflow-report-darwin-amd64`      |
+| Linux (most PCs)                | `cashflow-report-linux-amd64`       |
+| Linux on ARM                    | `cashflow-report-linux-arm64`       |
+
+Prefer building from source? See [Quick start](#quick-start-web-app) below.
+
 ## Quick start (web app)
 
-1. Build the binary once (or download a prebuilt one):
+1. Build the binary once, or
+   [download a prebuilt one](#download):
 
    ```bash
    go build -o cashflow-report .
