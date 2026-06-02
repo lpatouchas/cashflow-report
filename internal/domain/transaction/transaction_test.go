@@ -50,6 +50,30 @@ func TestFilterTransfers(t *testing.T) {
 			},
 			wantIDs: []string{"U"},
 		},
+		{
+			name: "same id different amount are kept",
+			input: []Transaction{
+				tx("X", "f1.csv", 10, true, d),
+				tx("X", "f2.csv", 20, false, d),
+			},
+			wantIDs: []string{"X", "X"},
+		},
+		{
+			name: "same id different date are kept",
+			input: []Transaction{
+				tx("Y", "f1.csv", 10, true, d),
+				tx("Y", "f2.csv", 10, false, d.AddDate(0, 0, 1)),
+			},
+			wantIDs: []string{"Y", "Y"},
+		},
+		{
+			name: "float-noise amounts still excluded",
+			input: []Transaction{
+				tx("Z", "f1.csv", 100.00, true, d),
+				tx("Z", "f2.csv", 100.001, false, d),
+			},
+			wantIDs: nil,
+		},
 	}
 
 	for _, tc := range tests {
