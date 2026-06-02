@@ -67,6 +67,8 @@ func TestFilterTransfers(t *testing.T) {
 			wantIDs: []string{"Y", "Y"},
 		},
 		{
+			// 100.00 and 100.001 both round to 10000 cents, so they share a
+			// match key and are excluded as a transfer/duplicate pair.
 			name: "float-noise amounts still excluded",
 			input: []Transaction{
 				tx("Z", "f1.csv", 100.00, true, d),
