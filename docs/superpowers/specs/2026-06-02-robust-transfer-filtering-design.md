@@ -112,6 +112,29 @@ Extend `TestFilterTransfers` with:
 - (Retain) cross-file opposite-direction transfer → excluded.
 - (Retain) single-file same-direction duplicate → excluded.
 
+## Worktree isolation
+
+All implementation work happens in a dedicated git worktree, not the main
+checkout. A throwaway branch (e.g. `robust-transfer-filtering`) is created in its
+own worktree directory; the change is built and tested there in isolation, and
+the worktree is cleaned up after the work is merged/abandoned. The main working
+directory stays untouched during development.
+
+## Implementation phases
+
+1. **Worktree setup.** Create an isolated git worktree on a new branch for this
+   change. All subsequent phases run inside it.
+2. **Tests first (red).** Add the new `TestFilterTransfers` cases — same ID with
+   different amount (kept), same ID with different date (kept), and float-noise
+   amount that rounds to the same cents (dropped). These fail against the current
+   ID-only implementation.
+3. **Implementation (green).** Add `amountCents` and the `matchKey` composite key
+   (id + cents + calendar-day), rewrite `FilterTransfers` to count and filter on
+   the composite key, and add the doc comment documenting both collision kinds
+   (inter-account transfer vs duplicate anomaly).
+4. **Verify.** Run `go test ./...`, `go vet ./...`, and `go build ./...`. Confirm
+   all retained and new cases pass.
+
 ## Out of scope
 
 - Date tolerance windows (settle-next-day matching).
