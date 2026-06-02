@@ -58,12 +58,14 @@ type MonthlyBreakdown struct {
 }
 
 // matchKey identifies transactions that represent the same underlying movement.
-// Two transactions collide when they share an ID, the same amount (to the cent)
-// and the same calendar day.
+// Two transactions collide when they share an ID and the same amount (to the
+// cent). Transaction IDs are unique per movement, so the date is deliberately
+// not part of the key: a bank may record the two legs of one transfer on
+// different days, and including the date would split that single movement into
+// two groups and miss it.
 type matchKey struct {
 	id    string
 	cents int64
-	day   int64
 }
 
 // amountCents rounds an amount to whole cents for robust comparison, collapsing
@@ -72,28 +74,25 @@ func amountCents(amount float64) int64 {
 	return int64(math.Round(amount * 100))
 }
 
-// keyOf builds the composite match key for a transaction. The day component is
-// built from the calendar date in UTC so time-of-day and timezone never affect
-// the match.
+// keyOf builds the composite match key for a transaction.
 func keyOf(t Transaction) matchKey {
-	day := time.Date(t.Date.Year(), t.Date.Month(), t.Date.Day(), 0, 0, 0, 0, time.UTC).Unix()
-	return matchKey{id: t.ID, cents: amountCents(t.Amount), day: day}
+	return matchKey{id: t.ID, cents: amountCents(t.Amount)}
 }
 
 // FilterTransfers removes inter-account transfers and duplicate anomalies.
 //
-// Transactions are grouped by (ID, amount-in-cents, calendar-day). Any group
-// with more than one member is dropped entirely; only transactions whose key is
-// unique are returned. A collision is one of two kinds, distinguished solely by
-// direction — both are excluded:
+// Transactions are grouped by (ID, amount-in-cents). Any group with more than
+// one member is dropped entirely; only transactions whose key is unique are
+// returned. A collision is one of two kinds, distinguished solely by direction —
+// both are excluded:
 //
 //   - Inter-account transfer: two legs with opposite direction (one debit, one
-//     credit). The money leaves one account and enters another.
+//     credit). The money leaves one account and enters another, possibly posting
+//     on different days; both legs carry the same unique ID.
 //   - Duplicate anomaly: two or more records with the same direction. A repeated
 //     export row.
 //
-// Transactions that share only an ID but differ in amount or date are unrelated
-// and kept.
+// Transactions that share only an ID but differ in amount are unrelated and kept.
 func FilterTransfers(txns []Transaction) []Transaction {
 	counts := make(map[matchKey]int, len(txns))
 	for _, t := range txns {

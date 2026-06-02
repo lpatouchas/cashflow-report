@@ -59,12 +59,15 @@ func TestFilterTransfers(t *testing.T) {
 			wantIDs: []string{"X", "X"},
 		},
 		{
-			name: "same id different date are kept",
+			// The date is not part of the match key, so a transfer whose two
+			// legs post on different days still collides on (ID, amount) and is
+			// excluded.
+			name: "same id same amount different date are excluded",
 			input: []Transaction{
 				tx("Y", "f1.csv", 10, true, d),
 				tx("Y", "f2.csv", 10, false, d.AddDate(0, 0, 1)),
 			},
-			wantIDs: []string{"Y", "Y"},
+			wantIDs: nil,
 		},
 		{
 			// 100.00 and 100.001 both round to 10000 cents, so they share a
