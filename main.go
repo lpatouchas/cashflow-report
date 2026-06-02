@@ -23,6 +23,10 @@ const (
 	defaultAddr    = ":8080"
 )
 
+// version is the build version, overridden at release time via
+// -ldflags="-X main.version=<tag>". Defaults to "dev" for local builds.
+var version = "dev"
+
 const usage = `cashflow-report — summarise bank CSV exports into an HTML report
 
 Usage:
@@ -85,7 +89,7 @@ func dispatch(args []string) error {
 		fmt.Print(usage)
 		return nil
 	case "version":
-		fmt.Println("cashflow-report dev")
+		fmt.Println("cashflow-report " + version)
 		return nil
 	case "generate":
 		fs := flag.NewFlagSet("generate", flag.ContinueOnError)
