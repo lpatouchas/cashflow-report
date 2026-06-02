@@ -3,6 +3,7 @@ package transaction
 import (
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -56,17 +57,51 @@ type MonthlyBreakdown struct {
 	ByAccount    []AccountBreakdown
 }
 
+// matchKey identifies transactions that represent the same underlying movement.
+// Two transactions collide when they share an ID, the same amount (to the cent)
+// and the same calendar day.
+type matchKey struct {
+	id    string
+	cents int64
+	day   int64
+}
+
+// amountCents rounds an amount to whole cents for robust comparison, collapsing
+// float-representation noise (e.g. 100.00 vs 100.001) onto a single value.
+func amountCents(amount float64) int64 {
+	return int64(math.Round(amount * 100))
+}
+
+// keyOf builds the composite match key for a transaction. The day component is
+// built from the calendar date in UTC so time-of-day and timezone never affect
+// the match.
+func keyOf(t Transaction) matchKey {
+	day := time.Date(t.Date.Year(), t.Date.Month(), t.Date.Day(), 0, 0, 0, 0, time.UTC).Unix()
+	return matchKey{id: t.ID, cents: amountCents(t.Amount), day: day}
+}
+
 // FilterTransfers removes inter-account transfers and duplicate anomalies.
-// Any ID appearing more than once across the input is dropped entirely;
-// only transactions whose ID occurs exactly once are returned.
+//
+// Transactions are grouped by (ID, amount-in-cents, calendar-day). Any group
+// with more than one member is dropped entirely; only transactions whose key is
+// unique are returned. A collision is one of two kinds, distinguished solely by
+// direction — both are excluded:
+//
+//   - Inter-account transfer: two legs with opposite direction (one debit, one
+//     credit). The money leaves one account and enters another.
+//   - Duplicate anomaly: two or more records with the same direction. A repeated
+//     export row.
+//
+// Transactions that share only an ID but differ in amount or date are unrelated
+// and kept.
 func FilterTransfers(txns []Transaction) []Transaction {
-	counts := make(map[string]int, len(txns))
+	counts := make(map[matchKey]int, len(txns))
 	for _, t := range txns {
-		counts[t.ID]++
+		counts[keyOf(t)]++
 	}
 	var kept []Transaction
 	for _, t := range txns {
-		if counts[t.ID] == 1 {
+		if counts[keyOf(t)] == 1 {
 			kept = append(kept, t)
 		}
 	}
