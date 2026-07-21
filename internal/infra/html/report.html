@@ -364,6 +364,10 @@ body { background: #2a2824; font-family: var(--sans); }
 .tx-amt.pos { color: var(--c-sav); }
 .tx-amt.neg { color: var(--neg); }
 .tx-src { color: var(--muted); font-size: 12px; }
+.tx-kind {
+  font-family: var(--sans); font-size: 10.5px; color: var(--accent);
+  letter-spacing: .04em; opacity: .8; white-space: nowrap; margin-left: 6px;
+}
 
 /* ---------- PRINT (paper-friendly Ledger palette) ---------- */
 @media print {
@@ -750,8 +754,9 @@ body { background: #2a2824; font-family: var(--sans); }
     var html = '';
     sorted.forEach(function (t) {
       var cls = t.amt < 0 ? 'neg' : 'pos';
+      var kind = t.kind ? ' <span class="tx-kind">' + esc(t.kind) + '</span>' : '';
       html += '<tr><td class="l">' + esc(t.date) + '</td>' +
-              '<td class="l">' + esc(t.desc) + '</td>' +
+              '<td class="l">' + esc(t.desc) + kind + '</td>' +
               '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
               '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
     });

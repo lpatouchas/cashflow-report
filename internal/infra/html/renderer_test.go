@@ -221,6 +221,7 @@ func TestRender(t *testing.T) {
 					Transactions: []transaction.Transaction{
 						{ID: "1", Date: time.Date(2026, time.May, 12, 0, 0, 0, 0, time.UTC), Description: "Salary", Amount: 1500, IsDebit: false, SourceFile: "acc.csv"},
 						{ID: "2", Date: time.Date(2026, time.May, 3, 0, 0, 0, 0, time.UTC), Description: "Rent", Amount: 500, IsDebit: true, SourceFile: "acc.csv"},
+						{ID: "3", Date: time.Date(2026, time.May, 5, 0, 0, 0, 0, time.UTC), Description: "SKROUTZ", Amount: 22, IsDebit: true, SourceFile: "acc.csv", IsVISA: true, Kind: "Αγορά"},
 					},
 				},
 			},
@@ -239,6 +240,8 @@ func TestRender(t *testing.T) {
 		require.Contains(t, content, `"src":"acc"`)
 		require.Contains(t, content, `"k":"2026-05-12"`)     // ISO sort key
 		require.Contains(t, content, `"date":"12 May 2026"`) // display date
+		require.Contains(t, content, `"kind":"Αγορά"`)       // VISA transaction type serialized
+		require.NotContains(t, content, `"desc":"Salary","kind"`) // bank rows omit kind (omitempty)
 	})
 
 	t.Run("renders the By Account block scaffold in the modal", func(t *testing.T) {
