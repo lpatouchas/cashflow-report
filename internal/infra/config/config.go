@@ -21,37 +21,50 @@ func DefaultPath() string {
 	return filepath.Join(filepath.Dir(exe), "exclusion-rules.json")
 }
 
-// Load reads and validates rule specs from path. A missing file is seeded with
-// DefaultRuleSpecs(), saved, and returned. A malformed file or invalid spec
-// returns a descriptive error naming the path; it never silently falls back.
-func Load(path string) ([]transaction.RuleSpec, error) {
-	data, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) {
-		specs := transaction.DefaultRuleSpecs()
-		if err := Save(path, specs); err != nil {
-			return nil, err
-		}
-		return specs, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", path, err)
-	}
-
-	var specs []transaction.RuleSpec
-	if err := json.Unmarshal(data, &specs); err != nil {
-		return nil, fmt.Errorf("parsing %s: %w", path, err)
-	}
-	for i, s := range specs {
-		if err := s.Validate(); err != nil {
-			return nil, fmt.Errorf("%s: rule %d: %w", path, i+1, err)
-		}
-	}
-	return specs, nil
+// File is the on-disk configuration: exclusion rules plus optional VISA
+// reconciliation settings. It is stored as a JSON object.
+type File struct {
+	Exclusions    []transaction.RuleSpec       `json:"exclusions"`
+	VisaReconcile *transaction.ReconcileConfig `json:"visaReconcile,omitempty"`
 }
 
-// Save writes specs to path as indented JSON.
-func Save(path string, specs []transaction.RuleSpec) error {
-	data, err := json.MarshalIndent(specs, "", "  ")
+// Load reads and validates the config object from path. A missing file is
+// seeded with DefaultRuleSpecs() (and no VISA reconciliation), saved, and
+// returned. A malformed file or invalid entry returns a descriptive error
+// naming the path; it never silently falls back.
+func Load(path string) (File, error) {
+	data, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		f := File{Exclusions: transaction.DefaultRuleSpecs()}
+		if err := Save(path, f); err != nil {
+			return File{}, err
+		}
+		return f, nil
+	}
+	if err != nil {
+		return File{}, fmt.Errorf("reading %s: %w", path, err)
+	}
+
+	var f File
+	if err := json.Unmarshal(data, &f); err != nil {
+		return File{}, fmt.Errorf("parsing %s: %w", path, err)
+	}
+	for i, s := range f.Exclusions {
+		if err := s.Validate(); err != nil {
+			return File{}, fmt.Errorf("%s: rule %d: %w", path, i+1, err)
+		}
+	}
+	if f.VisaReconcile != nil {
+		if err := f.VisaReconcile.Validate(); err != nil {
+			return File{}, fmt.Errorf("%s: visaReconcile: %w", path, err)
+		}
+	}
+	return f, nil
+}
+
+// Save writes the config object to path as indented JSON.
+func Save(path string, f File) error {
+	data, err := json.MarshalIndent(f, "", "  ")
 	if err != nil {
 		return err
 	}

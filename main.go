@@ -47,13 +47,13 @@ generate flags:
 
 // runGenerate produces the HTML report from a folder of CSV exports.
 func runGenerate(dataDir, outputPath, configPath string) error {
-	specs, err := config.Load(configPath)
+	cfg, err := config.Load(configPath)
 	if err != nil {
 		return err
 	}
 	repo := csv.New(dataDir)
 	renderer := html.NewFile(outputPath)
-	svc := report.NewService(repo, renderer, transaction.CompileRules(specs))
+	svc := report.NewService(repo, renderer, transaction.CompileRules(cfg.Exclusions))
 	if err := svc.GenerateReport(context.Background()); err != nil {
 		return err
 	}
