@@ -308,7 +308,7 @@ body { background: #2a2824; font-family: var(--sans); }
 .tx-modal[hidden] { display: none; }
 .tx-backdrop { position: absolute; inset: 0; background: rgba(20,18,12,.55); }
 .tx-dialog {
-  position: relative; z-index: 1; width: min(680px, 100%); max-height: 84vh;
+  position: relative; z-index: 1; width: min(840px, 100%); max-height: 84vh;
   display: flex; flex-direction: column; overflow: hidden;
   background: var(--sheet); color: var(--ink); border: 1px solid var(--rule);
   box-shadow: 0 30px 80px -30px rgba(0,0,0,.6);
@@ -361,10 +361,11 @@ body { background: #2a2824; font-family: var(--sans); }
 }
 .tx-table td.r { text-align: right; }
 .tx-table td.l { text-align: left; }
+.tx-table th:first-child, .tx-table td:first-child { white-space: nowrap; }
 .tx-amt.pos { color: var(--c-sav); }
 .tx-amt.neg { color: var(--neg); }
 .tx-src { color: var(--muted); font-size: 12px; }
-.tx-kind {
+.tx-cat {
   font-family: var(--sans); font-size: 10.5px; color: var(--accent);
   letter-spacing: .04em; opacity: .8; white-space: nowrap; margin-left: 6px;
 }
@@ -754,9 +755,9 @@ body { background: #2a2824; font-family: var(--sans); }
     var html = '';
     sorted.forEach(function (t) {
       var cls = t.amt < 0 ? 'neg' : 'pos';
-      var kind = t.kind ? ' <span class="tx-kind">' + esc(t.kind) + '</span>' : '';
+      var cat = t.cat ? ' <span class="tx-cat">' + esc(t.cat) + '</span>' : '';
       html += '<tr><td class="l">' + esc(t.date) + '</td>' +
-              '<td class="l">' + esc(t.desc) + kind + '</td>' +
+              '<td class="l">' + esc(t.desc) + cat + '</td>' +
               '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
               '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
     });

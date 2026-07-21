@@ -21,7 +21,7 @@ type Transaction struct {
 	SourceFile  string    // originating CSV filename
 	Branch      string    // Κατάστημα (bank col 3); "" for VISA rows
 	IsVISA      bool      // true for rows parsed from a VISA file
-	Kind        string    // Είδος συναλλαγής (VISA col 3, e.g. "Αγορά"); "" for bank rows
+	Category    string    // Κατηγορία δαπάνης (VISA col 2, e.g. "Supermarket / Διατροφή"); "" for bank rows
 }
 
 // Summary is the aggregated report over a set of transactions.

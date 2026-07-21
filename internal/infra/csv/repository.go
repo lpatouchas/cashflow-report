@@ -200,7 +200,7 @@ func parseVISARow(rec []string, file string, line int) (transaction.Transaction,
 		IsDebit:     true,
 		SourceFile:  file,
 		IsVISA:      true,
-		Kind:        strings.TrimSpace(rec[3]), // Είδος συναλλαγής
+		Category:    strings.TrimSpace(rec[2]), // Κατηγορία δαπάνης
 	}, true
 }
 

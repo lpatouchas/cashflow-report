@@ -139,7 +139,7 @@ func TestVISAParsing(t *testing.T) {
 		require.Equal(t, 18, got[0].Date.Day())
 		require.Equal(t, "visa.csv", got[0].SourceFile)
 		require.Equal(t, "VISA-18/07/2026 10:42-EFOOD", got[0].ID)
-		require.Equal(t, "Αγορά", got[0].Kind) // Είδος συναλλαγής captured
+		require.Equal(t, "Supermarket / Διατροφή", got[0].Category) // Κατηγορία δαπάνης captured
 	})
 
 	t.Run("pending status appends a marker to the description", func(t *testing.T) {
