@@ -153,6 +153,35 @@ The columns the report relies on are:
 Rows with too few columns, an unparseable date or amount, or a sign other than
 `Χ`/`Π` are skipped with a warning.
 
+### VISA statement reconciliation
+
+The bank export records a credit-card bill as a single lump debit
+(`ΠΛΗΡΩΜΗ VΙSA`, `Κατάστημα` 96) — it shows *how much* went to the card but not
+*what it was spent on*. Drop the card's own VISA statement export into the same
+folder and the report replaces each month's lump with the itemized purchases
+behind it, plus a single `VISA LEFTOVERS` line that keeps the month's net figure
+intact.
+
+VISA exports are auto-detected by their header and are semicolon-separated with
+signed, comma-decimal amounts:
+
+```csv
+Ημ/νία συναλλαγής;Αιτιολογία;Κατηγορία δαπάνης;Είδος συναλλαγής;Ποσό (EUR);Κατάσταση συναλλαγής
+03/07/2025 12:15;SUPERMARKET ALFA;Supermarket / Διατροφή;Αγορά;-50,00;Εκτελεσμένη
+15/07/2025 11:00;PAYMENT EBANKING;Αφορά ηλεκτρονικές μεταφορές/πληρωμές;Πληρωμή Κάρτας;300,00;Εκτελεσμένη
+```
+
+- **Negative amounts** are real purchases and are kept as expenses; **positive
+  amounts** are card payments (the mirror of the bank lump) and are skipped so
+  they are not double-counted.
+- Pending transactions (`Κατάσταση` = `Σε επεξεργασία`) get a ` *` appended to
+  their description.
+- The lump matcher is configured in `exclusion-rules.json` under
+  `visaReconcile` (`description`, `matchMode`, `branch`); when that block is
+  absent, reconciliation is disabled and the app behaves as before.
+
+See `sample-data/visa.csv` for a runnable example.
+
 ## Development
 
 ```bash

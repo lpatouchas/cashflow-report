@@ -42,13 +42,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, _ *http.Request) {
-	specs, err := config.Load(s.configPath)
+	cfg, err := config.Load(s.configPath)
 	if err != nil {
 		http.Error(w, "Couldn't load exclusion rules: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := indexTmpl.Execute(w, struct{ Rules []ruleView }{toRuleViews(specs)}); err != nil {
+	if err := indexTmpl.Execute(w, struct{ Rules []ruleView }{toRuleViews(cfg.Exclusions)}); err != nil {
 		slog.Error("rendering index", "error", err)
 	}
 }
@@ -71,8 +71,15 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	cfg, err := config.Load(s.configPath)
+	if err != nil {
+		http.Error(w, "Couldn't load rules: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	cfg.Exclusions = specs
 	if r.FormValue("save") != "" {
-		if err := config.Save(s.configPath, specs); err != nil {
+		if err := config.Save(s.configPath, cfg); err != nil {
 			http.Error(w, "Couldn't save rules: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -93,7 +100,7 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var buf bytes.Buffer
-	svc := report.NewService(csv.New(tmpDir), html.NewWriter(&buf), transaction.CompileRules(specs))
+	svc := report.NewService(csv.New(tmpDir), html.NewWriter(&buf), transaction.CompileRules(specs), cfg.VisaReconcile)
 	if err := svc.GenerateReport(context.Background()); err != nil {
 		http.Error(w, "Couldn't generate the report: "+err.Error(), http.StatusInternalServerError)
 		return

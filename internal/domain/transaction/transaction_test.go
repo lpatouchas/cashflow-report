@@ -381,3 +381,257 @@ func TestSummarize(t *testing.T) {
 		require.InDelta(t, 10, aprMB.ByAccount[0].Expenses, 0.001)
 	})
 }
+
+func TestReconcileConfigValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     ReconcileConfig
+		wantErr bool
+	}{
+		{"exact ok", ReconcileConfig{Description: "X", MatchMode: MatchExact, Branch: "96"}, false},
+		{"contains ok", ReconcileConfig{Description: "X", MatchMode: MatchContains, Branch: "96"}, false},
+		{"empty mode defaults to exact", ReconcileConfig{Description: "X", Branch: "96"}, false},
+		{"missing description", ReconcileConfig{MatchMode: MatchExact, Branch: "96"}, true},
+		{"blank description", ReconcileConfig{Description: "   ", MatchMode: MatchExact}, true},
+		{"unknown mode", ReconcileConfig{Description: "X", MatchMode: "fuzzy"}, true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cfg.Validate()
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+// visaLumpDesc is the exact mixed-script bank description "ΠΛΗΡΩΜΗ VΙSA".
+const visaLumpDesc = "ΠΛΗΡΩΜΗ VΙSΑ"
+
+func day(y int, m time.Month, d int) time.Time {
+	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+}
+
+func reconcileCfg() ReconcileConfig {
+	return ReconcileConfig{Description: visaLumpDesc, MatchMode: MatchExact, Branch: "96"}
+}
+
+func lumpTx(amount float64, date time.Time, file string) Transaction {
+	return Transaction{Description: visaLumpDesc, Branch: "96", Amount: amount, IsDebit: true, Date: date, SourceFile: file}
+}
+
+func purchaseTx(desc string, amount float64, date time.Time) Transaction {
+	return Transaction{Description: desc, Amount: amount, IsDebit: true, Date: date, SourceFile: "visa.csv", IsVISA: true}
+}
+
+// findLeftover returns the single VISA LEFTOVERS row for the given month, or a
+// zero Transaction with ok=false when none was emitted.
+func findLeftover(txns []Transaction, y int, m time.Month) (Transaction, bool) {
+	for _, t := range txns {
+		if t.Description == "VISA LEFTOVERS" && t.Date.Year() == y && t.Date.Month() == m {
+			return t, true
+		}
+	}
+	return Transaction{}, false
+}
+
+func TestReconcileVISA(t *testing.T) {
+	t.Run("no VISA purchases leaves lumps untouched (§5)", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(300, day(2025, time.July, 15), "checking.csv"),
+			{ID: "R", Description: "RENT", Amount: 600, IsDebit: true, Date: day(2025, time.July, 1), SourceFile: "checking.csv", Branch: "99"},
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		require.Equal(t, in, out)
+	})
+
+	t.Run("single month: positive leftover is a debit dated the lump date", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(300, day(2025, time.July, 15), "checking.csv"),
+			purchaseTx("SHOP", 50, day(2025, time.July, 3)),
+			purchaseTx("CAFE", 20, day(2025, time.July, 10)),
+			purchaseTx("GADGET", 150, day(2025, time.July, 14)),
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+
+		// lump removed
+		for _, o := range out {
+			require.NotEqual(t, visaLumpDesc, o.Description)
+		}
+		// purchases re-tagged onto the paying account
+		var purchases int
+		for _, o := range out {
+			if o.IsVISA {
+				require.Equal(t, "checking.csv", o.SourceFile)
+				purchases++
+			}
+		}
+		require.Equal(t, 3, purchases)
+		// leftover = 300 - 220 = 80, debit, dated the lump date
+		lo, ok := findLeftover(out, 2025, time.July)
+		require.True(t, ok)
+		require.True(t, lo.IsDebit)
+		require.InDelta(t, 80, lo.Amount, 0.001)
+		require.Equal(t, day(2025, time.July, 15), lo.Date)
+		require.Equal(t, "checking.csv", lo.SourceFile)
+	})
+
+	t.Run("purchases but no lump that month: negative leftover is a credit on month-end (§2)", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(300, day(2025, time.July, 15), "checking.csv"), // sets paying account
+			purchaseTx("SHOP", 300, day(2025, time.July, 3)),
+			purchaseTx("AUG-BUY", 100, day(2025, time.August, 4)), // no August lump
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+
+		// July nets to zero leftover -> no row
+		_, july := findLeftover(out, 2025, time.July)
+		require.False(t, july)
+		// August: leftover = 0 - 100 = -100 -> credit, dated 31 Aug
+		aug, ok := findLeftover(out, 2025, time.August)
+		require.True(t, ok)
+		require.False(t, aug.IsDebit)
+		require.InDelta(t, 100, aug.Amount, 0.001)
+		require.Equal(t, day(2025, time.August, 31), aug.Date)
+	})
+
+	t.Run("lump but no purchases that month: whole amount is a leftover debit (§1)", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(300, day(2025, time.June, 20), "checking.csv"),
+			purchaseTx("JULY-BUY", 50, day(2025, time.July, 2)),
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		june, ok := findLeftover(out, 2025, time.June)
+		require.True(t, ok)
+		require.True(t, june.IsDebit)
+		require.InDelta(t, 300, june.Amount, 0.001)
+		require.Equal(t, day(2025, time.June, 20), june.Date)
+	})
+
+	t.Run("no bank lump anywhere: purchases attributed to \"VISA\" (§4)", func(t *testing.T) {
+		in := []Transaction{
+			purchaseTx("SHOP", 40, day(2025, time.July, 3)),
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		for _, o := range out {
+			if o.IsVISA {
+				require.Equal(t, "VISA", o.SourceFile)
+			}
+		}
+		lo, ok := findLeftover(out, 2025, time.July)
+		require.True(t, ok)
+		require.False(t, lo.IsDebit) // -40 -> credit
+		require.InDelta(t, 40, lo.Amount, 0.001)
+		require.Equal(t, "VISA", lo.SourceFile)
+	})
+
+	t.Run("zero leftover emits no row (§7)", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(220, day(2025, time.July, 15), "checking.csv"),
+			purchaseTx("SHOP", 220, day(2025, time.July, 3)),
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		_, ok := findLeftover(out, 2025, time.July)
+		require.False(t, ok)
+	})
+
+	t.Run("multiple lumps in one month sum", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(100, day(2025, time.July, 9), "checking.csv"),
+			lumpTx(200, day(2025, time.July, 9), "checking.csv"),
+			purchaseTx("SHOP", 220, day(2025, time.July, 3)),
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		lo, ok := findLeftover(out, 2025, time.July)
+		require.True(t, ok)
+		require.InDelta(t, 80, lo.Amount, 0.001) // 300 - 220
+	})
+
+	t.Run("branch gating: right description, wrong branch is not a lump", func(t *testing.T) {
+		wrong := lumpTx(300, day(2025, time.July, 15), "checking.csv")
+		wrong.Branch = "12" // not 96
+		in := []Transaction{wrong, purchaseTx("SHOP", 50, day(2025, time.July, 3))}
+		out := ReconcileVISA(in, reconcileCfg())
+		// the branch-12 row is NOT removed; it passes through untouched
+		var kept bool
+		for _, o := range out {
+			if o.Description == visaLumpDesc && o.Branch == "12" {
+				kept = true
+			}
+		}
+		require.True(t, kept)
+		// leftover = 0 - 50 = -50 (no payment matched this month)
+		lo, ok := findLeftover(out, 2025, time.July)
+		require.True(t, ok)
+		require.False(t, lo.IsDebit)
+		require.InDelta(t, 50, lo.Amount, 0.001)
+	})
+
+	t.Run("per-month invariant: purchaseSum + leftover == paymentSum", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(300, day(2025, time.July, 15), "checking.csv"),
+			purchaseTx("A", 50, day(2025, time.July, 3)),
+			purchaseTx("B", 20, day(2025, time.July, 10)),
+			purchaseTx("C", 150, day(2025, time.July, 14)),
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		var purchaseCents, leftoverCents int64
+		for _, o := range out {
+			if o.Date.Month() != time.July {
+				continue
+			}
+			switch {
+			case o.IsVISA:
+				purchaseCents += amountCents(o.Amount)
+			case o.Description == "VISA LEFTOVERS":
+				if o.IsDebit {
+					leftoverCents += amountCents(o.Amount)
+				} else {
+					leftoverCents -= amountCents(o.Amount)
+				}
+			}
+		}
+		require.Equal(t, amountCents(300), purchaseCents+leftoverCents)
+	})
+
+	t.Run("multiple bank files carry lumps: largest total wins", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(100, day(2025, time.July, 15), "small.csv"),
+			lumpTx(300, day(2025, time.July, 15), "big.csv"),
+			purchaseTx("SHOP", 50, day(2025, time.July, 3)),
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		for _, o := range out {
+			if o.IsVISA || o.Description == "VISA LEFTOVERS" {
+				require.Equal(t, "big.csv", o.SourceFile)
+			}
+		}
+		// Both lumps are folded into the month's payment total and consolidated
+		// onto the largest account: leftover = (100 + 300) - 50 = 350 debit.
+		lo, ok := findLeftover(out, 2025, time.July)
+		require.True(t, ok)
+		require.True(t, lo.IsDebit)
+		require.InDelta(t, 350, lo.Amount, 0.001)
+		require.Equal(t, "big.csv", lo.SourceFile)
+		// Neither raw lump survives as a passed-through row.
+		for _, o := range out {
+			require.NotEqual(t, visaLumpDesc, o.Description)
+		}
+	})
+
+	t.Run("december leftover with no lump dates on 31 Dec (month+1 rollover)", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(100, day(2025, time.July, 15), "checking.csv"), // establishes the paying account
+			purchaseTx("JULY", 100, day(2025, time.July, 2)),      // July nets to zero -> no row
+			purchaseTx("XMAS", 60, day(2025, time.December, 20)),  // December: no lump
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		dec, ok := findLeftover(out, 2025, time.December)
+		require.True(t, ok)
+		require.False(t, dec.IsDebit) // 0 - 60 = -60 -> credit
+		require.InDelta(t, 60, dec.Amount, 0.001)
+		require.Equal(t, day(2025, time.December, 31), dec.Date)
+	})
+}

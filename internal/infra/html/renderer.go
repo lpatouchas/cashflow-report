@@ -57,7 +57,8 @@ type txVM struct {
 	Date   string  `json:"date"` // "12 May 2026", for display
 	Sort   string  `json:"k"`    // "2026-05-12", for date sorting
 	Desc   string  `json:"desc"`
-	Amount float64 `json:"amt"` // signed: income +, expense −
+	Cat    string  `json:"cat,omitempty"` // Κατηγορία δαπάνης (VISA only), shown beside the description
+	Amount float64 `json:"amt"`           // signed: income +, expense −
 	Source string  `json:"src"`
 }
 
@@ -140,6 +141,7 @@ func buildView(summary transaction.Summary) viewData {
 				Date:   t.Date.Format("02 January 2006"),
 				Sort:   t.Date.Format("2006-01-02"),
 				Desc:   t.Description,
+				Cat:    t.Category,
 				Amount: amt,
 				Source: accountLabel(t.SourceFile),
 			}

@@ -100,3 +100,98 @@ func TestGetAll(t *testing.T) {
 		require.ErrorContains(t, err, "locked.csv")
 	})
 }
+
+func TestBankBranchCaptured(t *testing.T) {
+	dir := t.TempDir()
+	body := header + "\n" +
+		`1;29/05/2026;="SHOP";96;27/5/2026;="ID1";53,79;Χ;` + "\n"
+	writeCSV(t, dir, "acc.csv", body)
+
+	got, err := New(dir).GetAll(context.Background())
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	require.Equal(t, "96", got[0].Branch)
+	require.False(t, got[0].IsVISA)
+}
+
+// visaHeader is the VISA statement header row (semicolon-separated).
+const visaHeader = "Ημ/νία συναλλαγής;Αιτιολογία;Κατηγορία δαπάνης;Είδος συναλλαγής;Ποσό (EUR);Κατάσταση συναλλαγής"
+
+func TestVISAParsing(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("negative rows kept as expenses, positive skipped", func(t *testing.T) {
+		dir := t.TempDir()
+		body := visaHeader + "\n" +
+			`18/07/2026 10:42;EFOOD;Supermarket / Διατροφή;Αγορά;-5,80;Εκτελεσμένη` + "\n" +
+			`13/07/2026 10:58;PAYMENT EBANKING;Αφορά μεταφορές;Πληρωμή Κάρτας;411,19;Εκτελεσμένη` + "\n"
+		writeCSV(t, dir, "visa.csv", body)
+
+		got, err := New(dir).GetAll(ctx)
+		require.NoError(t, err)
+		require.Len(t, got, 1) // the positive card-payment row is dropped
+		require.True(t, got[0].IsVISA)
+		require.True(t, got[0].IsDebit)
+		require.Equal(t, "EFOOD", got[0].Description)
+		require.InDelta(t, 5.80, got[0].Amount, 0.001)
+		require.Equal(t, 2026, got[0].Date.Year())
+		require.Equal(t, 7, int(got[0].Date.Month()))
+		require.Equal(t, 18, got[0].Date.Day())
+		require.Equal(t, "visa.csv", got[0].SourceFile)
+		require.Equal(t, "VISA-18/07/2026 10:42-EFOOD", got[0].ID)
+		require.Equal(t, "Supermarket / Διατροφή", got[0].Category) // Κατηγορία δαπάνης captured
+	})
+
+	t.Run("pending status appends a marker to the description", func(t *testing.T) {
+		dir := t.TempDir()
+		body := visaHeader + "\n" +
+			`21/07/2026 11:27;SKROUTZ;Λοιπές δαπάνες;Αγορά;-22,19;Σε επεξεργασία` + "\n"
+		writeCSV(t, dir, "visa.csv", body)
+
+		got, err := New(dir).GetAll(ctx)
+		require.NoError(t, err)
+		require.Len(t, got, 1)
+		require.Equal(t, "SKROUTZ *", got[0].Description)
+		require.Equal(t, "VISA-21/07/2026 11:27-SKROUTZ", got[0].ID) // ID uses the raw description
+	})
+
+	t.Run("bank files are unaffected by VISA detection", func(t *testing.T) {
+		dir := t.TempDir()
+		writeCSV(t, dir, "bank.csv", header+"\n"+`1;01/05/2026;="A";9;1/5/2026;="A1";1,00;Χ;`+"\n")
+		got, err := New(dir).GetAll(ctx)
+		require.NoError(t, err)
+		require.Len(t, got, 1)
+		require.False(t, got[0].IsVISA)
+	})
+
+	t.Run("leading UTF-8 BOM does not defeat VISA header detection", func(t *testing.T) {
+		dir := t.TempDir()
+		// Real bank/VISA exports commonly begin with a UTF-8 BOM (EF BB BF).
+		body := "\ufeff" + visaHeader + "\n" +
+			`21/07/2026 11:27;EVERYPAY*SKROUTZ;Λοιπές δαπάνες;Αγορά;-22,19;Σε επεξεργασία` + "\n" +
+			`21/07/2026 09:16;FD4 COFFEE I K E;Εστίαση;Αγορά;-36,00;Σε επεξεργασία` + "\n"
+		writeCSV(t, dir, "visa-gold.csv", body)
+
+		got, err := New(dir).GetAll(ctx)
+		require.NoError(t, err)
+		require.Len(t, got, 2)
+		require.True(t, got[0].IsVISA)
+		require.Equal(t, "EVERYPAY*SKROUTZ *", got[0].Description)
+		require.InDelta(t, 22.19, got[0].Amount, 0.001)
+	})
+
+	t.Run("skips malformed VISA rows", func(t *testing.T) {
+		dir := t.TempDir()
+		body := visaHeader + "\n" +
+			`only;three;cols` + "\n" + // too few columns
+			`notadate 10:00;X;C;Αγορά;-1,00;Εκτελεσμένη` + "\n" + // bad date
+			`01/01/2026 10:00;Y;C;Αγορά;notanumber;Εκτελεσμένη` + "\n" + // bad amount
+			`01/01/2026 10:00;OK;C;Αγορά;-2,50;Εκτελεσμένη` + "\n" // good
+		writeCSV(t, dir, "visa.csv", body)
+
+		got, err := New(dir).GetAll(ctx)
+		require.NoError(t, err)
+		require.Len(t, got, 1)
+		require.Equal(t, "OK", got[0].Description)
+	})
+}
