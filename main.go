@@ -53,7 +53,7 @@ func runGenerate(dataDir, outputPath, configPath string) error {
 	}
 	repo := csv.New(dataDir)
 	renderer := html.NewFile(outputPath)
-	svc := report.NewService(repo, renderer, transaction.CompileRules(cfg.Exclusions))
+	svc := report.NewService(repo, renderer, transaction.CompileRules(cfg.Exclusions), cfg.VisaReconcile)
 	if err := svc.GenerateReport(context.Background()); err != nil {
 		return err
 	}

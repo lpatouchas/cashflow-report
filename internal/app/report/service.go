@@ -9,15 +9,17 @@ import (
 )
 
 // Service orchestrates report generation:
-// load → filter transfers → apply exclusion rules → summarize → render.
+// load → partition bank/VISA → filter transfers (bank only) →
+// reconcile VISA → apply exclusion rules → summarize → render.
 type Service struct {
-	repo     transaction.Repository
-	renderer Renderer
-	rules    []transaction.ExclusionRule
+	repo      transaction.Repository
+	renderer  Renderer
+	rules     []transaction.ExclusionRule
+	reconcile *transaction.ReconcileConfig // nil = VISA reconciliation disabled
 }
 
-func NewService(repo transaction.Repository, renderer Renderer, rules []transaction.ExclusionRule) *Service {
-	return &Service{repo: repo, renderer: renderer, rules: rules}
+func NewService(repo transaction.Repository, renderer Renderer, rules []transaction.ExclusionRule, reconcile *transaction.ReconcileConfig) *Service {
+	return &Service{repo: repo, renderer: renderer, rules: rules, reconcile: reconcile}
 }
 
 func (s *Service) GenerateReport(ctx context.Context) error {
@@ -26,13 +28,29 @@ func (s *Service) GenerateReport(ctx context.Context) error {
 		return fmt.Errorf("loading transactions: %w", err)
 	}
 
-	kept := transaction.FilterTransfers(all)
-	if excluded := len(all) - len(kept); excluded > 0 {
+	// VISA rows bypass FilterTransfers: that filter targets bank inter-account
+	// transfers and duplicate export rows, which do not apply to card purchases.
+	var bank, visa []transaction.Transaction
+	for _, t := range all {
+		if t.IsVISA {
+			visa = append(visa, t)
+		} else {
+			bank = append(bank, t)
+		}
+	}
+
+	bankKept := transaction.FilterTransfers(bank)
+	if excluded := len(bank) - len(bankKept); excluded > 0 {
 		slog.Info("excluded inter-account transfers and duplicates", "count", excluded)
 	}
 
-	before := len(kept)
-	kept = transaction.ApplyExclusions(kept, s.rules)
+	combined := append(bankKept, visa...)
+	if s.reconcile != nil {
+		combined = transaction.ReconcileVISA(combined, *s.reconcile)
+	}
+
+	before := len(combined)
+	kept := transaction.ApplyExclusions(combined, s.rules)
 	if dropped := before - len(kept); dropped > 0 {
 		slog.Info("excluded transactions by exclusion rule", "count", dropped)
 	}
