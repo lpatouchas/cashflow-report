@@ -85,6 +85,14 @@ func (r *Repository) parseFile(path string) ([]transaction.Transaction, error) {
 		return nil, err
 	}
 
+	// Bank/VISA exports are frequently saved with a leading UTF-8 BOM
+	// (EF BB BF). It lands on the first field of the first record and is not
+	// stripped by TrimSpace, so it would defeat VISA header detection and
+	// corrupt the first column. Remove it once, up front.
+	if len(records) > 0 && len(records[0]) > 0 {
+		records[0][0] = strings.TrimPrefix(records[0][0], "\ufeff")
+	}
+
 	base := filepath.Base(path)
 	isVISA := len(records) > 0 && isVISAHeader(records[0])
 	var txns []transaction.Transaction

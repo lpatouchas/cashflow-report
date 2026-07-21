@@ -163,6 +163,22 @@ func TestVISAParsing(t *testing.T) {
 		require.False(t, got[0].IsVISA)
 	})
 
+	t.Run("leading UTF-8 BOM does not defeat VISA header detection", func(t *testing.T) {
+		dir := t.TempDir()
+		// Real bank/VISA exports commonly begin with a UTF-8 BOM (EF BB BF).
+		body := "\ufeff" + visaHeader + "\n" +
+			`21/07/2026 11:27;EVERYPAY*SKROUTZ;Λοιπές δαπάνες;Αγορά;-22,19;Σε επεξεργασία` + "\n" +
+			`21/07/2026 09:16;FD4 COFFEE I K E;Εστίαση;Αγορά;-36,00;Σε επεξεργασία` + "\n"
+		writeCSV(t, dir, "visa-gold.csv", body)
+
+		got, err := New(dir).GetAll(ctx)
+		require.NoError(t, err)
+		require.Len(t, got, 2)
+		require.True(t, got[0].IsVISA)
+		require.Equal(t, "EVERYPAY*SKROUTZ *", got[0].Description)
+		require.InDelta(t, 22.19, got[0].Amount, 0.001)
+	})
+
 	t.Run("skips malformed VISA rows", func(t *testing.T) {
 		dir := t.TempDir()
 		body := visaHeader + "\n" +
