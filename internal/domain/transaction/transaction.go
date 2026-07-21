@@ -18,6 +18,8 @@ type Transaction struct {
 	Amount      float64   // Ποσό (positive)
 	IsDebit     bool      // Πρόσημο ποσού: Χ = true (expense), Π = false (income)
 	SourceFile  string    // originating CSV filename
+	Branch      string    // Κατάστημα (bank col 3); "" for VISA rows
+	IsVISA      bool      // true for rows parsed from a VISA file
 }
 
 // Summary is the aggregated report over a set of transactions.
@@ -174,6 +176,37 @@ func CompileRules(specs []RuleSpec) []ExclusionRule {
 		rules = append(rules, CompileRule(s))
 	}
 	return rules
+}
+
+// ReconcileConfig configures VISA lump reconciliation. A bank row is a VISA
+// lump when its Description matches per MatchMode AND its Branch equals Branch.
+// An empty MatchMode means exact.
+type ReconcileConfig struct {
+	Description string    `json:"description"`
+	MatchMode   MatchMode `json:"matchMode"`
+	Branch      string    `json:"branch"`
+}
+
+// Validate reports whether the reconcile config is well-formed.
+func (c ReconcileConfig) Validate() error {
+	if strings.TrimSpace(c.Description) == "" {
+		return errors.New("description is required")
+	}
+	switch c.MatchMode {
+	case "", MatchExact, MatchContains:
+		return nil
+	default:
+		return fmt.Errorf("unknown match mode %q (use %q or %q)", c.MatchMode, MatchExact, MatchContains)
+	}
+}
+
+// descriptionMatches reports whether desc satisfies the config's description
+// rule. An empty MatchMode is treated as exact.
+func (c ReconcileConfig) descriptionMatches(desc string) bool {
+	if c.MatchMode == MatchContains {
+		return strings.Contains(desc, c.Description)
+	}
+	return desc == c.Description
 }
 
 // DefaultRuleSpecs is the built-in rule set expressed as data: the single

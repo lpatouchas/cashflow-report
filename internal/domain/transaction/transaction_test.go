@@ -381,3 +381,28 @@ func TestSummarize(t *testing.T) {
 		require.InDelta(t, 10, aprMB.ByAccount[0].Expenses, 0.001)
 	})
 }
+
+func TestReconcileConfigValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     ReconcileConfig
+		wantErr bool
+	}{
+		{"exact ok", ReconcileConfig{Description: "X", MatchMode: MatchExact, Branch: "96"}, false},
+		{"contains ok", ReconcileConfig{Description: "X", MatchMode: MatchContains, Branch: "96"}, false},
+		{"empty mode defaults to exact", ReconcileConfig{Description: "X", Branch: "96"}, false},
+		{"missing description", ReconcileConfig{MatchMode: MatchExact, Branch: "96"}, true},
+		{"blank description", ReconcileConfig{Description: "   ", MatchMode: MatchExact}, true},
+		{"unknown mode", ReconcileConfig{Description: "X", MatchMode: "fuzzy"}, true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.cfg.Validate()
+			if tc.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
