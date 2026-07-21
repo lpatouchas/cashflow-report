@@ -393,8 +393,8 @@ func payingAccountFrom(lumpTotals map[string]int64) string {
 		return files[i] < files[j] // stable tie-break
 	})
 	for _, f := range files[1:] {
-		slog.Warn("multiple bank files carry VISA lumps; using the largest, ignoring this one",
-			"file", f, "total", float64(lumpTotals[f])/100)
+		slog.Warn("multiple bank files carry VISA lumps; consolidating all VISA activity onto the largest-total account",
+			"consolidatedInto", files[0], "absorbedFile", f, "absorbedTotal", float64(lumpTotals[f])/100)
 	}
 	return files[0]
 }

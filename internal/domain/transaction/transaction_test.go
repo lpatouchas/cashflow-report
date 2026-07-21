@@ -608,5 +608,30 @@ func TestReconcileVISA(t *testing.T) {
 				require.Equal(t, "big.csv", o.SourceFile)
 			}
 		}
+		// Both lumps are folded into the month's payment total and consolidated
+		// onto the largest account: leftover = (100 + 300) - 50 = 350 debit.
+		lo, ok := findLeftover(out, 2025, time.July)
+		require.True(t, ok)
+		require.True(t, lo.IsDebit)
+		require.InDelta(t, 350, lo.Amount, 0.001)
+		require.Equal(t, "big.csv", lo.SourceFile)
+		// Neither raw lump survives as a passed-through row.
+		for _, o := range out {
+			require.NotEqual(t, visaLumpDesc, o.Description)
+		}
+	})
+
+	t.Run("december leftover with no lump dates on 31 Dec (month+1 rollover)", func(t *testing.T) {
+		in := []Transaction{
+			lumpTx(100, day(2025, time.July, 15), "checking.csv"), // establishes the paying account
+			purchaseTx("JULY", 100, day(2025, time.July, 2)),      // July nets to zero -> no row
+			purchaseTx("XMAS", 60, day(2025, time.December, 20)),  // December: no lump
+		}
+		out := ReconcileVISA(in, reconcileCfg())
+		dec, ok := findLeftover(out, 2025, time.December)
+		require.True(t, ok)
+		require.False(t, dec.IsDebit) // 0 - 60 = -60 -> credit
+		require.InDelta(t, 60, dec.Amount, 0.001)
+		require.Equal(t, day(2025, time.December, 31), dec.Date)
 	})
 }
