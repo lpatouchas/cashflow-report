@@ -116,6 +116,7 @@ func parseRow(rec []string, file string, line int) (transaction.Transaction, boo
 		Amount:      amount,
 		IsDebit:     isDebit,
 		SourceFile:  file,
+		Branch:      unwrap(rec[3]),
 	}, true
 }
 

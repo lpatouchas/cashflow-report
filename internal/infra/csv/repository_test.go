@@ -100,3 +100,16 @@ func TestGetAll(t *testing.T) {
 		require.ErrorContains(t, err, "locked.csv")
 	})
 }
+
+func TestBankBranchCaptured(t *testing.T) {
+	dir := t.TempDir()
+	body := header + "\n" +
+		`1;29/05/2026;="SHOP";96;27/5/2026;="ID1";53,79;Χ;` + "\n"
+	writeCSV(t, dir, "acc.csv", body)
+
+	got, err := New(dir).GetAll(context.Background())
+	require.NoError(t, err)
+	require.Len(t, got, 1)
+	require.Equal(t, "96", got[0].Branch)
+	require.False(t, got[0].IsVISA)
+}
