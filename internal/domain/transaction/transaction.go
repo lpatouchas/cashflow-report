@@ -3,6 +3,7 @@ package transaction
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"math"
 	"sort"
 	"strings"
@@ -247,6 +248,155 @@ func ApplyExclusions(txns []Transaction, rules []ExclusionRule) []Transaction {
 		}
 	}
 	return kept
+}
+
+// ReconcileVISA replaces each month's matched VISA lump payment(s) with the
+// itemized VISA purchases behind them, plus a single VISA LEFTOVERS row that
+// preserves the month's net outflow (purchaseSum + leftover == paymentSum).
+//
+// It runs after FilterTransfers, on the combined bank+VISA slice. When no VISA
+// purchases are present the input is returned unchanged (lumps stay intact).
+func ReconcileVISA(txns []Transaction, cfg ReconcileConfig) []Transaction {
+	// Itemized purchases (the parser keeps only negative VISA rows).
+	var purchases []Transaction
+	for _, t := range txns {
+		if t.IsVISA {
+			purchases = append(purchases, t)
+		}
+	}
+	if len(purchases) == 0 {
+		return txns // §5: lumps present, no VISA file — leave untouched.
+	}
+
+	// Step 1 — identify lumps among bank rows; warn on partial matches.
+	isLump := make([]bool, len(txns))
+	lumpTotals := make(map[string]int64) // SourceFile -> total cents
+	for i, t := range txns {
+		if t.IsVISA {
+			continue
+		}
+		descMatch := cfg.descriptionMatches(t.Description)
+		branchMatch := t.Branch == cfg.Branch
+		switch {
+		case descMatch && branchMatch:
+			isLump[i] = true
+			lumpTotals[t.SourceFile] += amountCents(t.Amount)
+		case branchMatch && !descMatch:
+			slog.Warn("branch matches VISA config but description does not; not treating as a VISA lump",
+				"date", t.Date.Format("2006-01-02"), "description", t.Description, "branch", t.Branch, "amount", t.Amount)
+		case descMatch && !branchMatch:
+			slog.Warn("description matches VISA config but branch does not; not treating as a VISA lump",
+				"date", t.Date.Format("2006-01-02"), "description", t.Description, "branch", t.Branch, "amount", t.Amount)
+		}
+	}
+
+	payingAccount := payingAccountFrom(lumpTotals)
+
+	type ym struct {
+		year  int
+		month time.Month
+	}
+
+	// Bank non-lump rows pass through untouched.
+	out := make([]Transaction, 0, len(txns))
+	for i, t := range txns {
+		if t.IsVISA || isLump[i] {
+			continue
+		}
+		out = append(out, t)
+	}
+
+	// Re-tagged purchases; accumulate per-month purchase sums.
+	purchaseSum := make(map[ym]int64)
+	for _, p := range purchases {
+		p.SourceFile = payingAccount
+		out = append(out, p)
+		purchaseSum[ym{p.Date.Year(), p.Date.Month()}] += amountCents(p.Amount)
+	}
+
+	// Per-month payment sums and the last lump date in each month.
+	paymentSum := make(map[ym]int64)
+	lastLump := make(map[ym]time.Time)
+	for i, t := range txns {
+		if !isLump[i] {
+			continue
+		}
+		k := ym{t.Date.Year(), t.Date.Month()}
+		paymentSum[k] += amountCents(t.Amount)
+		if d, ok := lastLump[k]; !ok || t.Date.After(d) {
+			lastLump[k] = t.Date
+		}
+	}
+
+	// Union of months, sorted for deterministic output.
+	monthSet := make(map[ym]bool)
+	for k := range purchaseSum {
+		monthSet[k] = true
+	}
+	for k := range paymentSum {
+		monthSet[k] = true
+	}
+	months := make([]ym, 0, len(monthSet))
+	for k := range monthSet {
+		months = append(months, k)
+	}
+	sort.Slice(months, func(i, j int) bool {
+		if months[i].year != months[j].year {
+			return months[i].year < months[j].year
+		}
+		return months[i].month < months[j].month
+	})
+
+	for _, k := range months {
+		leftover := paymentSum[k] - purchaseSum[k]
+		if leftover == 0 {
+			continue // §7
+		}
+		row := Transaction{
+			Description: "VISA LEFTOVERS",
+			SourceFile:  payingAccount,
+			ID:          fmt.Sprintf("VISA-LEFTOVERS-%04d-%02d", k.year, int(k.month)),
+		}
+		if leftover > 0 {
+			row.IsDebit = true
+			row.Amount = float64(leftover) / 100
+		} else {
+			row.IsDebit = false
+			row.Amount = float64(-leftover) / 100
+		}
+		if d, ok := lastLump[k]; ok {
+			row.Date = d
+		} else {
+			// No payment this month: date on the month's last day.
+			row.Date = time.Date(k.year, k.month+1, 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, -1)
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+// payingAccountFrom picks the SourceFile carrying the largest lump total,
+// warning about the rest. With no lumps it falls back to the label "VISA".
+func payingAccountFrom(lumpTotals map[string]int64) string {
+	if len(lumpTotals) == 0 {
+		slog.Warn("VISA purchases found but no matching bank lump; attributing to \"VISA\"")
+		return "VISA"
+	}
+	files := make([]string, 0, len(lumpTotals))
+	for f := range lumpTotals {
+		files = append(files, f)
+	}
+	sort.Slice(files, func(i, j int) bool {
+		if lumpTotals[files[i]] != lumpTotals[files[j]] {
+			return lumpTotals[files[i]] > lumpTotals[files[j]] // largest first
+		}
+		return files[i] < files[j] // stable tie-break
+	})
+	for _, f := range files[1:] {
+		slog.Warn("multiple bank files carry VISA lumps; using the largest, ignoring this one",
+			"file", f, "total", float64(lumpTotals[f])/100)
+	}
+	return files[0]
 }
 
 // Summarize aggregates transactions into totals and a per-month breakdown
