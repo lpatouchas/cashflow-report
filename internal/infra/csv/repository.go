@@ -15,10 +15,30 @@ import (
 )
 
 const (
-	signDebit  = "Χ" // U+03A7 Greek capital Chi
-	signCredit = "Π" // U+03A0 Greek capital Pi
-	columns    = 8
+	signDebit         = "Χ" // U+03A7 Greek capital Chi
+	signCredit        = "Π" // U+03A0 Greek capital Pi
+	columns           = 8
+	visaColumns       = 6
+	visaStatusPending = "Σε επεξεργασία"
 )
+
+// visaHeaderCols are the leading VISA-statement columns used to distinguish a
+// VISA export from a bank export. Only the leading columns are checked, and
+// trailing whitespace is tolerated.
+var visaHeaderCols = []string{"Ημ/νία συναλλαγής", "Αιτιολογία", "Κατηγορία δαπάνης"}
+
+// isVISAHeader reports whether a CSV header row is a VISA statement header.
+func isVISAHeader(rec []string) bool {
+	if len(rec) < len(visaHeaderCols) {
+		return false
+	}
+	for i, w := range visaHeaderCols {
+		if strings.TrimSpace(rec[i]) != w {
+			return false
+		}
+	}
+	return true
+}
 
 // Repository loads transactions from semicolon-separated Greek CSV exports
 // found in a directory.
@@ -66,12 +86,21 @@ func (r *Repository) parseFile(path string) ([]transaction.Transaction, error) {
 	}
 
 	base := filepath.Base(path)
+	isVISA := len(records) > 0 && isVISAHeader(records[0])
 	var txns []transaction.Transaction
 	for i, rec := range records {
 		if i == 0 {
 			continue // header
 		}
-		t, ok := parseRow(rec, base, i+1)
+		var (
+			t  transaction.Transaction
+			ok bool
+		)
+		if isVISA {
+			t, ok = parseVISARow(rec, base, i+1)
+		} else {
+			t, ok = parseRow(rec, base, i+1)
+		}
 		if !ok {
 			continue
 		}
@@ -117,6 +146,52 @@ func parseRow(rec []string, file string, line int) (transaction.Transaction, boo
 		IsDebit:     isDebit,
 		SourceFile:  file,
 		Branch:      unwrap(rec[3]),
+	}, true
+}
+
+// parseVISARow maps one VISA-statement row to a Transaction. Only negative
+// amounts (real purchases) are kept; positive rows are card payments (the
+// mirror of the bank lump) and are skipped so they are not double-counted.
+func parseVISARow(rec []string, file string, line int) (transaction.Transaction, bool) {
+	if len(rec) < visaColumns {
+		slog.Warn("skipping malformed row", "file", file, "line", line, "reason", "too few columns")
+		return transaction.Transaction{}, false
+	}
+
+	// rec[0] is "DD/MM/YYYY HH:MM"; keep the date part.
+	fields := strings.Fields(rec[0])
+	if len(fields) == 0 {
+		slog.Warn("skipping malformed row", "file", file, "line", line, "reason", "bad date")
+		return transaction.Transaction{}, false
+	}
+	date, err := parseDate(fields[0])
+	if err != nil {
+		slog.Warn("skipping malformed row", "file", file, "line", line, "reason", "bad date")
+		return transaction.Transaction{}, false
+	}
+
+	amount, err := parseAmount(unwrap(rec[4]))
+	if err != nil {
+		slog.Warn("skipping malformed row", "file", file, "line", line, "reason", "bad amount")
+		return transaction.Transaction{}, false
+	}
+	if amount >= 0 {
+		return transaction.Transaction{}, false // card payment / non-expense: skip silently
+	}
+
+	desc := strings.TrimSpace(rec[1])
+	if strings.TrimSpace(rec[5]) == visaStatusPending {
+		desc += " *"
+	}
+
+	return transaction.Transaction{
+		ID:          "VISA-" + strings.TrimSpace(rec[0]) + "-" + strings.TrimSpace(rec[1]),
+		Date:        date,
+		Description: desc,
+		Amount:      -amount, // negative signed amount -> positive expense
+		IsDebit:     true,
+		SourceFile:  file,
+		IsVISA:      true,
 	}, true
 }
 
