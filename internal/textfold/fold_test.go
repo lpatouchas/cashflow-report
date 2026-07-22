@@ -9,9 +9,9 @@ func TestFold(t *testing.T) {
 		want string
 	}{
 		// Greek uppercase lookalikes fold to Latin.
-		{"greek visa", "VΙSΑ", "VISA"},          // Greek Ι U+0399, Α U+0391
+		{"greek visa", "VΙSΑ", "VISA"}, // Greek Ι U+0399, Α U+0391
 		{"pure latin unchanged", "VISA", "VISA"},
-		{"greek header word", "Ημ/νία", "Hμ/νία"}, // only Η has a Latin twin here
+		{"greek header word", "Ημ/νία", "Hμ/νία"},  // only Η has a Latin twin here
 		{"lowercase lookalikes", "χρονο", "xpoνo"}, // χ→x, ρ→p, ο→o; ν stays
 		// No false merges.
 		{"digits not folded", "CO0P", "CO0P"},
