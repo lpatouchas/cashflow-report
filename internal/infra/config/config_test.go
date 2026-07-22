@@ -15,12 +15,25 @@ func TestLoadSeedsWhenMissing(t *testing.T) {
 	f, err := Load(path)
 	require.NoError(t, err)
 	require.Equal(t, transaction.DefaultRuleSpecs(), f.Exclusions)
-	require.Nil(t, f.VisaReconcile)
+	require.Equal(t, transaction.DefaultReconcileConfig(), f.VisaReconcile)
 	require.FileExists(t, path)
 
 	again, err := Load(path)
 	require.NoError(t, err)
 	require.Equal(t, f, again)
+}
+
+func TestLoadSeedsVisaReconcileWhenMissing(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "rules.json")
+
+	f, err := Load(path)
+	require.NoError(t, err)
+	require.Equal(t, transaction.DefaultReconcileConfig(), f.VisaReconcile)
+
+	// The seed is persisted, so a reload returns the same VISA config.
+	again, err := Load(path)
+	require.NoError(t, err)
+	require.Equal(t, f.VisaReconcile, again.VisaReconcile)
 }
 
 func TestSaveLoadRoundTrip(t *testing.T) {

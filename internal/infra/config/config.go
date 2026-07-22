@@ -29,13 +29,16 @@ type File struct {
 }
 
 // Load reads and validates the config object from path. A missing file is
-// seeded with DefaultRuleSpecs() (and no VISA reconciliation), saved, and
+// seeded with DefaultRuleSpecs() and DefaultReconcileConfig(), saved, and
 // returned. A malformed file or invalid entry returns a descriptive error
 // naming the path; it never silently falls back.
 func Load(path string) (File, error) {
 	data, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) {
-		f := File{Exclusions: transaction.DefaultRuleSpecs()}
+		f := File{
+			Exclusions:    transaction.DefaultRuleSpecs(),
+			VisaReconcile: transaction.DefaultReconcileConfig(),
+		}
 		if err := Save(path, f); err != nil {
 			return File{}, err
 		}
