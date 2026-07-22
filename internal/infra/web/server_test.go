@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -119,6 +120,71 @@ func TestHandleGenerate(t *testing.T) {
 		require.Contains(t, string(data), `"matchMode": "contains"`)
 	})
 
+	t.Run("saves the VISA reconciliation config when the checkbox is set", func(t *testing.T) {
+		path := tmpRules(t)
+		fields := [][2]string{
+			{"rule.matchMode", "exact"},
+			{"rule.isDebit", "any"},
+			{"rule.description", "SHOP"},
+			{"rule.sourceFile", ""},
+			{"visa.description", "ΠΛΗΡΩΜΗ VΙSΑ"},
+			{"visa.matchMode", "exact"},
+			{"visa.branch", "96"},
+			{"save", "on"},
+		}
+		buf, ct := multipartWith(t, "acc.csv", twoTxns, fields)
+		req := httptest.NewRequest(http.MethodPost, "/generate", buf)
+		req.Header.Set("Content-Type", ct)
+		rec := httptest.NewRecorder()
+		New(path).ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		require.Contains(t, string(data), `"visaReconcile"`)
+		require.Contains(t, string(data), `"branch": "96"`)
+	})
+
+	t.Run("blank VISA description saves reconciliation off", func(t *testing.T) {
+		path := tmpRules(t)
+		fields := [][2]string{
+			{"rule.matchMode", "exact"},
+			{"rule.isDebit", "any"},
+			{"rule.description", "SHOP"},
+			{"rule.sourceFile", ""},
+			{"visa.description", ""},
+			{"visa.matchMode", "exact"},
+			{"visa.branch", "96"},
+			{"save", "on"},
+		}
+		buf, ct := multipartWith(t, "acc.csv", twoTxns, fields)
+		req := httptest.NewRequest(http.MethodPost, "/generate", buf)
+		req.Header.Set("Content-Type", ct)
+		rec := httptest.NewRecorder()
+		New(path).ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusOK, rec.Code)
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		require.NotContains(t, string(data), `"visaReconcile"`)
+	})
+
+	t.Run("rejects an invalid VISA match mode", func(t *testing.T) {
+		fields := [][2]string{
+			{"visa.description", "ΠΛΗΡΩΜΗ VΙSΑ"},
+			{"visa.matchMode", "fuzzy"},
+			{"visa.branch", "96"},
+		}
+		buf, ct := multipartWith(t, "acc.csv", twoTxns, fields)
+		req := httptest.NewRequest(http.MethodPost, "/generate", buf)
+		req.Header.Set("Content-Type", ct)
+		rec := httptest.NewRecorder()
+		New(tmpRules(t)).ServeHTTP(rec, req)
+
+		require.Equal(t, http.StatusBadRequest, rec.Code)
+		require.Contains(t, rec.Body.String(), "VISA reconciliation")
+	})
+
 	t.Run("rejects an invalid rule row", func(t *testing.T) {
 		fields := [][2]string{
 			{"rule.matchMode", "exact"},
@@ -158,6 +224,20 @@ func TestHandleGenerate(t *testing.T) {
 
 		require.Equal(t, http.StatusBadRequest, rec.Code)
 	})
+}
+
+func TestHandleIndexRendersVISASection(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	New(tmpRules(t)).ServeHTTP(rec, req)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	body := rec.Body.String()
+	require.Contains(t, body, `name="visa.description"`)
+	require.Contains(t, body, `name="visa.branch"`)
+	require.Contains(t, body, `value="96"`) // seeded default branch
+	// VISA section appears before the exclusion-rules editor.
+	require.Less(t, strings.Index(body, `name="visa.description"`), strings.Index(body, `name="rule.description"`))
 }
 
 func TestParseRulesSkipsBlankRows(t *testing.T) {

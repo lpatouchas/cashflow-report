@@ -39,6 +39,25 @@
         </label>
         <ul id="list"></ul>
 
+        <h2>VISA reconciliation</h2>
+        <p class="hint">
+          When a bank export shows one lump “VISA payment” and you also attach the itemized
+          VISA statement, this replaces the lump with the individual purchases (plus a single
+          <code>VISA LEFTOVERS</code> row that keeps the month's total intact). A bank row is
+          treated as the lump when its <strong>description</strong> matches
+          (<code>exact</code> or <code>contains</code>) <em>and</em> its <strong>branch</strong>
+          (Κατάστημα) equals the value below. <strong>Leave the description blank to turn VISA
+          reconciliation off.</strong> Tick “Save…” below to keep your changes.
+        </p>
+        <div class="rule">
+          <select name="visa.matchMode">
+            <option value="exact" {{if eq .Reconcile.MatchMode "exact"}}selected{{end}}>exact</option>
+            <option value="contains" {{if eq .Reconcile.MatchMode "contains"}}selected{{end}}>contains</option>
+          </select>
+          <input class="desc" name="visa.description" placeholder="description (blank = off)" value="{{.Reconcile.Description}}">
+          <input class="src" name="visa.branch" placeholder="branch" value="{{.Reconcile.Branch}}">
+        </div>
+
         <h2>Exclusion rules</h2>
         <p class="hint">
           Exclusion rules leave matching transactions out of your totals — useful for
