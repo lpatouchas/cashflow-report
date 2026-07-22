@@ -271,6 +271,20 @@ func TestDefaultRuleSpecs(t *testing.T) {
 	require.False(t, rules[0](creditMiss))
 }
 
+func TestDefaultReconcileConfig(t *testing.T) {
+	cfg := DefaultReconcileConfig()
+	require.NotNil(t, cfg)
+	require.NoError(t, cfg.Validate())
+	require.Equal(t, MatchExact, cfg.MatchMode)
+	require.Equal(t, "96", cfg.Branch)
+	// Description is the documented homoglyph example (Greek Ι U+0399, Α U+0391).
+	// Pin the exact runes so an accidental Latin-lookalike edit is caught.
+	require.Equal(t,
+		[]rune{0x3a0, 0x39b, 0x397, 0x3a1, 0x3a9, 0x39c, 0x397, 0x20, 0x56, 0x399, 0x53, 0x391},
+		[]rune(cfg.Description),
+	)
+}
+
 func TestSummarize(t *testing.T) {
 	may := time.Date(2026, time.May, 10, 0, 0, 0, 0, time.UTC)
 	may2 := time.Date(2026, time.May, 20, 0, 0, 0, 0, time.UTC)

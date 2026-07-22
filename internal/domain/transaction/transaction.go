@@ -225,6 +225,17 @@ func DefaultRuleSpecs() []RuleSpec {
 	}}
 }
 
+// DefaultReconcileConfig is the built-in VISA reconciliation example, matching
+// the documented sample in exclusion-rules.json and the README. It seeds a
+// fresh config so the web UI shows a working example on first run.
+func DefaultReconcileConfig() *ReconcileConfig {
+	return &ReconcileConfig{
+		Description: "ΠΛΗΡΩΜΗ VΙSΑ", // Greek Ι U+0399, Α U+0391 — as in README/sample
+		MatchMode:   MatchExact,
+		Branch:      "96",
+	}
+}
+
 // DefaultExclusionRules are the built-in rules applied until external
 // configuration replaces them. Equivalent to CompileRules(DefaultRuleSpecs()).
 func DefaultExclusionRules() []ExclusionRule {
