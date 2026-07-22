@@ -361,7 +361,8 @@ body { background: #2a2824; font-family: var(--sans); }
 }
 .tx-table td.r { text-align: right; }
 .tx-table td.l { text-align: left; }
-.tx-table th:first-child, .tx-table td:first-child { white-space: nowrap; }
+.tx-table th:first-child, .tx-table td:first-child,
+.tx-table th:nth-child(2), .tx-table td:nth-child(2) { white-space: nowrap; }
 .tx-amt.pos { color: var(--c-sav); }
 .tx-amt.neg { color: var(--neg); }
 .tx-src { color: var(--muted); font-size: 12px; }
@@ -369,6 +370,24 @@ body { background: #2a2824; font-family: var(--sans); }
   font-family: var(--sans); font-size: 10.5px; color: var(--accent);
   letter-spacing: .04em; opacity: .8; white-space: nowrap; margin-left: 6px;
 }
+.tx-check { width: 1%; white-space: nowrap; }
+.tx-row-check, .tx-all-check { cursor: pointer; accent-color: var(--accent); margin: 0; }
+.tx-selbar {
+  display: flex; align-items: center; gap: 22px; padding: 12px 24px;
+  border-top: 1px solid var(--rule); background: var(--sheet);
+  font-family: var(--sans); font-size: 12px; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tx-selbar[hidden] { display: none; }
+.tx-selbar b { color: var(--ink); font-weight: 600; }
+.tx-sel-count { font-weight: 600; color: var(--ink); }
+.tx-sel-figs { display: inline-flex; gap: 22px; flex-wrap: wrap; }
+.tx-sel-clear {
+  margin-left: auto; background: transparent; border: 1px solid var(--rule);
+  color: var(--muted); font-family: var(--sans); font-size: 12px;
+  padding: 4px 12px; cursor: pointer;
+}
+.tx-sel-clear:hover { color: var(--ink); border-color: var(--ink); }
 
 /* ---------- PRINT (paper-friendly Ledger palette) ---------- */
 @media print {
@@ -381,7 +400,7 @@ body { background: #2a2824; font-family: var(--sans); }
     --shadow: none; padding: 0;
   }
   .sheet { box-shadow: none; max-width: none; padding: 0; }
-  .editions, .chart-controls, .block-hint, .tx-modal { display: none !important; }
+  .editions, .chart-controls, .block-hint, .tx-modal, .tx-selbar { display: none !important; }
 }
 </style>
 </head>
@@ -526,6 +545,7 @@ body { background: #2a2824; font-family: var(--sans); }
         <table class="tx-table" id="tx-table">
           <thead>
             <tr>
+              <th class="l tx-check"><input type="checkbox" id="tx-all" class="tx-all-check" aria-label="Select all transactions"></th>
               <th class="l active" data-key="k"><span class="th-in">Date<span class="sort-arrow show">▼</span></span></th>
               <th class="l" data-key="desc"><span class="th-in">Description<span class="sort-arrow">▼</span></span></th>
               <th class="r" data-key="amt"><span class="th-in">Amount<span class="sort-arrow">▼</span></span></th>
@@ -534,6 +554,11 @@ body { background: #2a2824; font-family: var(--sans); }
           </thead>
           <tbody id="tx-body"></tbody>
         </table>
+      </div>
+      <div class="tx-selbar" id="tx-selbar" hidden>
+        <span class="tx-sel-count" id="tx-sel-count"></span>
+        <span class="tx-sel-figs" id="tx-sel-figs"></span>
+        <button class="tx-sel-clear" id="tx-sel-clear" type="button">Clear</button>
       </div>
     </div>
   </div>
