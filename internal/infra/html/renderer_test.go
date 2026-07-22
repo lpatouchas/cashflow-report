@@ -238,9 +238,9 @@ func TestRender(t *testing.T) {
 		require.Contains(t, content, `"amt":1500`)      // income signed positive
 		require.Contains(t, content, `"amt":-500`)      // expense signed negative
 		require.Contains(t, content, `"src":"acc"`)
-		require.Contains(t, content, `"k":"2026-05-12"`)     // ISO sort key
-		require.Contains(t, content, `"date":"12 May 2026"`) // display date
-		require.Contains(t, content, `"cat":"Λοιπές δαπάνες"`)  // VISA expense category serialized
+		require.Contains(t, content, `"k":"2026-05-12"`)         // ISO sort key
+		require.Contains(t, content, `"date":"12 May 2026"`)     // display date
+		require.Contains(t, content, `"cat":"Λοιπές δαπάνες"`)   // VISA expense category serialized
 		require.NotContains(t, content, `"desc":"Salary","cat"`) // bank rows omit category (omitempty)
 	})
 
@@ -310,5 +310,28 @@ func TestRender(t *testing.T) {
 		require.NoError(t, err)
 		require.Contains(t, buf.String(), "€1.500,00")
 		require.Contains(t, buf.String(), "May 2026")
+	})
+
+	t.Run("renders the selection scaffold in the modal", func(t *testing.T) {
+		dir := t.TempDir()
+		out := filepath.Join(dir, "report.html")
+
+		summary := transaction.Summary{
+			TotalIncome: 1500, TotalExpenses: 500, Savings: 1000,
+			ByMonth: []transaction.MonthlyBreakdown{
+				{Year: 2026, Month: time.May, Income: 1500, Expenses: 500, Savings: 1000},
+			},
+		}
+
+		require.NoError(t, NewFile(out).Render(ctx, summary))
+
+		data, err := os.ReadFile(out)
+		require.NoError(t, err)
+		content := string(data)
+
+		require.Contains(t, content, `id="tx-all"`)       // select-all checkbox
+		require.Contains(t, content, `id="tx-selbar"`)    // sticky footer bar
+		require.Contains(t, content, `id="tx-sel-figs"`)  // running-total figures slot
+		require.Contains(t, content, `id="tx-sel-clear"`) // clear button
 	})
 }

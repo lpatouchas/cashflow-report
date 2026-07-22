@@ -8,6 +8,25 @@ browser (no terminal needed) or from the command line.
 > `1.550,00`-style amounts shown below). Exports from other banks are not yet
 > supported. See [CSV format](#csv-format) for an example.
 
+## Features
+
+- **Interactive HTML report** — total income, expenses, and savings, a 12-month
+  trend chart, and a per-month breakdown, all in a single self-contained file.
+- **Transaction drill-down** — click any month to open a modal of that month's
+  transactions, grouped by account and sortable by column.
+- **Select & total** — tick individual transactions in the modal to see a live
+  Income / Expenses / Net running total of the selection.
+- **Automatic transfer exclusion** — transaction IDs appearing across files are
+  treated as inter-account transfers and kept out of the totals.
+- **Editable exclusion rules** — match transactions by description (exact or
+  contains), edited right on the web page and optionally persisted.
+- **VISA statement reconciliation** — replaces each credit-card lump debit with
+  its itemized purchases from the card's own VISA export.
+- **Web app or CLI** — drag-and-drop in the browser, or generate reports
+  headlessly from a folder of CSV exports.
+- **No dependencies to run** — prebuilt, single-file binaries for Windows,
+  macOS, and Linux (x64 and ARM).
+
 ## Screenshots
 
 The report summarises total income, expenses, and savings, with a 12-month
