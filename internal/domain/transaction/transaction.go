@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/lpatouchas/cashflow-report/internal/textfold"
 )
 
 // Transaction is a single bank movement loaded from a CSV export.
@@ -157,10 +159,10 @@ func CompileRule(s RuleSpec) ExclusionRule {
 			return false
 		}
 		if s.MatchMode == MatchContains {
-			if !strings.Contains(t.Description, s.Description) {
+			if !strings.Contains(textfold.Fold(t.Description), textfold.Fold(s.Description)) {
 				return false
 			}
-		} else if t.Description != s.Description {
+		} else if textfold.Fold(t.Description) != textfold.Fold(s.Description) {
 			return false
 		}
 		if s.SourceFile != "" && t.SourceFile != s.SourceFile {
@@ -206,9 +208,9 @@ func (c ReconcileConfig) Validate() error {
 // rule. An empty MatchMode is treated as exact.
 func (c ReconcileConfig) descriptionMatches(desc string) bool {
 	if c.MatchMode == MatchContains {
-		return strings.Contains(desc, c.Description)
+		return strings.Contains(textfold.Fold(desc), textfold.Fold(c.Description))
 	}
-	return desc == c.Description
+	return textfold.Fold(desc) == textfold.Fold(c.Description)
 }
 
 // DefaultRuleSpecs is the built-in rule set expressed as data: the single
@@ -221,6 +223,17 @@ func DefaultRuleSpecs() []RuleSpec {
 		Description: "SAMPLE DESCRIPTION",
 		SourceFile:  "account.csv",
 	}}
+}
+
+// DefaultReconcileConfig is the built-in VISA reconciliation example, matching
+// the documented sample in exclusion-rules.json and the README. It seeds a
+// fresh config so the web UI shows a working example on first run.
+func DefaultReconcileConfig() *ReconcileConfig {
+	return &ReconcileConfig{
+		Description: "ΠΛΗΡΩΜΗ VΙSΑ", // Greek Ι U+0399, Α U+0391 — as in README/sample
+		MatchMode:   MatchExact,
+		Branch:      "96",
+	}
 }
 
 // DefaultExclusionRules are the built-in rules applied until external

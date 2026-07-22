@@ -179,6 +179,9 @@ signed, comma-decimal amounts:
 - The lump matcher is configured in `exclusion-rules.json` under
   `visaReconcile` (`description`, `matchMode`, `branch`); when that block is
   absent, reconciliation is disabled and the app behaves as before.
+- The VISA matcher can be edited directly in the web UI's **VISA
+  reconciliation** section (or in `exclusion-rules.json` under
+  `visaReconcile`); leave the description blank to turn it off.
 
 See `sample-data/visa.csv` for a runnable example.
 

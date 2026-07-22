@@ -48,7 +48,11 @@ func (s *Server) handleIndex(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := indexTmpl.Execute(w, struct{ Rules []ruleView }{toRuleViews(cfg.Exclusions)}); err != nil {
+	payload := struct {
+		Reconcile reconcileView
+		Rules     []ruleView
+	}{toReconcileView(cfg.VisaReconcile), toRuleViews(cfg.Exclusions)}
+	if err := indexTmpl.Execute(w, payload); err != nil {
 		slog.Error("rendering index", "error", err)
 	}
 }
@@ -72,12 +76,19 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rc, err := parseReconcile(r.MultipartForm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	cfg, err := config.Load(s.configPath)
 	if err != nil {
 		http.Error(w, "Couldn't load rules: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	cfg.Exclusions = specs
+	cfg.VisaReconcile = rc
 	if r.FormValue("save") != "" {
 		if err := config.Save(s.configPath, cfg); err != nil {
 			http.Error(w, "Couldn't save rules: "+err.Error(), http.StatusInternalServerError)

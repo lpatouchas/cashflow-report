@@ -228,6 +228,35 @@ func TestCompileRule(t *testing.T) {
 	require.False(t, r(credit)) // credit is on b.csv
 }
 
+func TestCompileRuleContainsToleratesLookalike(t *testing.T) {
+	// Rule typed with Latin "VISA"; transaction description carries Greek
+	// lookalikes "VΙSΑ" (Greek Ι, Α). Contains match must still fire.
+	spec := RuleSpec{MatchMode: MatchContains, Description: "VISA"}
+	rule := CompileRule(spec)
+	txn := Transaction{Description: "MONTHLY VΙSΑ PAYMENT"}
+	if !rule(txn) {
+		t.Errorf("contains rule should match across Greek↔Latin lookalikes")
+	}
+}
+
+func TestCompileRuleExactToleratesLookalike(t *testing.T) {
+	spec := RuleSpec{MatchMode: MatchExact, Description: "VISA"}
+	rule := CompileRule(spec)
+	txn := Transaction{Description: "VΙSΑ"} // Greek Ι, Α
+	if !rule(txn) {
+		t.Errorf("exact rule should match across Greek↔Latin lookalikes")
+	}
+}
+
+func TestCompileRuleStillRejectsDifferentText(t *testing.T) {
+	// Folding must not create false matches: digit 0 vs letter O stays distinct.
+	spec := RuleSpec{MatchMode: MatchExact, Description: "COOP"}
+	rule := CompileRule(spec)
+	if rule(Transaction{Description: "CO0P"}) {
+		t.Errorf("exact rule must not match CO0P against COOP")
+	}
+}
+
 func TestDefaultRuleSpecs(t *testing.T) {
 	specs := DefaultRuleSpecs()
 	require.Len(t, specs, 1)
@@ -240,6 +269,20 @@ func TestDefaultRuleSpecs(t *testing.T) {
 	require.False(t, rules[0](miss))
 	creditMiss := Transaction{Description: "SAMPLE DESCRIPTION", IsDebit: false, SourceFile: "account.csv"}
 	require.False(t, rules[0](creditMiss))
+}
+
+func TestDefaultReconcileConfig(t *testing.T) {
+	cfg := DefaultReconcileConfig()
+	require.NotNil(t, cfg)
+	require.NoError(t, cfg.Validate())
+	require.Equal(t, MatchExact, cfg.MatchMode)
+	require.Equal(t, "96", cfg.Branch)
+	// Description is the documented homoglyph example (Greek Ι U+0399, Α U+0391).
+	// Pin the exact runes so an accidental Latin-lookalike edit is caught.
+	require.Equal(t,
+		[]rune{0x3a0, 0x39b, 0x397, 0x3a1, 0x3a9, 0x39c, 0x397, 0x20, 0x56, 0x399, 0x53, 0x391},
+		[]rune(cfg.Description),
+	)
 }
 
 func TestSummarize(t *testing.T) {
@@ -634,4 +677,18 @@ func TestReconcileVISA(t *testing.T) {
 		require.InDelta(t, 60, dec.Amount, 0.001)
 		require.Equal(t, day(2025, time.December, 31), dec.Date)
 	})
+}
+
+func TestReconcileDescriptionMatchesLookalike(t *testing.T) {
+	// Consolidation config typed with Latin "VISA"; bank lump description
+	// carries Greek lookalikes. The lump must be consolidated.
+	cfg := ReconcileConfig{Description: "VISA", MatchMode: MatchContains, Branch: "HQ"}
+	lump := Transaction{Description: "VΙSΑ CARD", Branch: "HQ", Amount: 100, IsDebit: true, SourceFile: "bank.csv"}
+	purchase := Transaction{Description: "SHOP", Amount: 40, IsDebit: true, IsVISA: true, Date: lump.Date}
+	out := ReconcileVISA([]Transaction{lump, purchase}, cfg)
+	for _, txn := range out {
+		if txn.Description == "VΙSΑ CARD" {
+			t.Errorf("VISA lump with lookalike description should have been consolidated, not passed through")
+		}
+	}
 }
