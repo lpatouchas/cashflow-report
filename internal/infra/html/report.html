@@ -761,6 +761,12 @@ body { background: #2a2824; font-family: var(--sans); }
   var acctRowsEl = document.getElementById('tx-acc-rows');
   var bodyEl = document.getElementById('tx-body');
   var tableEl = document.getElementById('tx-table');
+  var selbar = document.getElementById('tx-selbar');
+  var selCountEl = document.getElementById('tx-sel-count');
+  var selFigsEl = document.getElementById('tx-sel-figs');
+  var selClearBtn = document.getElementById('tx-sel-clear');
+  var allEl = document.getElementById('tx-all');
+  var selected = new Set();
   var lastTrigger = null;
   var rows = [];
   var sort = { key: 'k', dir: 'desc' };
@@ -769,6 +775,31 @@ body { background: #2a2824; font-family: var(--sans); }
     return (v < 0 ? '−€' : '€') + Math.abs(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
   var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+
+  var syncSelAll = function () {
+    if (!allEl) return;
+    var n = rows.length, s = 0;
+    rows.forEach(function (t) { if (selected.has(t)) s++; });
+    allEl.checked = n > 0 && s === n;
+    allEl.indeterminate = s > 0 && s < n;
+  };
+
+  var renderSelbar = function () {
+    var inc = 0, exp = 0, n = 0;
+    selected.forEach(function (t) {
+      n++;
+      if (t.amt > 0) { inc += t.amt; } else { exp += t.amt; }
+    });
+    if (!n) { if (selbar) selbar.hidden = true; return; }
+    selCountEl.textContent = n + ' selected';
+    selFigsEl.innerHTML =
+      '<span>Income <b>' + eu(inc) + '</b></span>' +
+      '<span>Expenses <b>' + eu(exp) + '</b></span>' +
+      '<span>Net <b>' + eu(inc + exp) + '</b></span>';
+    selbar.hidden = false;
+  };
+
+  var clearSel = function () { selected.clear(); renderRows(); renderSelbar(); };
 
   var renderRows = function () {
     var sorted = rows.slice().sort(function (a, b) {
@@ -781,12 +812,19 @@ body { background: #2a2824; font-family: var(--sans); }
     sorted.forEach(function (t) {
       var cls = t.amt < 0 ? 'neg' : 'pos';
       var cat = t.cat ? ' <span class="tx-cat">' + esc(t.cat) + '</span>' : '';
-      html += '<tr><td class="l">' + esc(t.date) + '</td>' +
+      html += '<tr><td class="l tx-check"><input type="checkbox" class="tx-row-check" aria-label="Select transaction"></td>' +
+              '<td class="l">' + esc(t.date) + '</td>' +
               '<td class="l">' + esc(t.desc) + cat + '</td>' +
               '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
               '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
     });
     bodyEl.innerHTML = html;
+    var trs = bodyEl.querySelectorAll('tr');
+    sorted.forEach(function (t, i) {
+      var cb = trs[i].querySelector('.tx-row-check');
+      if (cb) { cb._tx = t; cb.checked = selected.has(t); }
+    });
+    syncSelAll();
     tableEl.querySelectorAll('th').forEach(function (th) {
       var on = th.getAttribute('data-key') === sort.key;
       th.classList.toggle('active', on);
@@ -822,8 +860,10 @@ body { background: #2a2824; font-family: var(--sans); }
       acctRowsEl.innerHTML = '';
       acctWrap.hidden = true;
     }
+    selected.clear();
     sort = { key: 'k', dir: 'desc' };
     renderRows();
+    renderSelbar();
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
     var closeBtn = modal.querySelector('[data-close]');
@@ -831,6 +871,8 @@ body { background: #2a2824; font-family: var(--sans); }
   };
 
   var close = function () {
+    selected.clear();
+    if (selbar) selbar.hidden = true;
     modal.hidden = true;
     document.body.style.overflow = '';
     if (lastTrigger) lastTrigger.focus();
@@ -848,9 +890,25 @@ body { background: #2a2824; font-family: var(--sans); }
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !modal.hidden) close();
   });
+  bodyEl.addEventListener('change', function (e) {
+    var cb = e.target;
+    if (!cb || !cb.classList || !cb.classList.contains('tx-row-check')) return;
+    if (cb.checked) { selected.add(cb._tx); } else { selected.delete(cb._tx); }
+    syncSelAll();
+    renderSelbar();
+  });
+  if (allEl) {
+    allEl.addEventListener('change', function () {
+      rows.forEach(function (t) { if (allEl.checked) { selected.add(t); } else { selected.delete(t); } });
+      renderRows();
+      renderSelbar();
+    });
+  }
+  if (selClearBtn) { selClearBtn.addEventListener('click', clearSel); }
   tableEl.querySelectorAll('th').forEach(function (th) {
     th.addEventListener('click', function () {
       var k = th.getAttribute('data-key');
+      if (!k) return;
       if (sort.key === k) { sort.dir = sort.dir === 'asc' ? 'desc' : 'asc'; }
       else { sort = { key: k, dir: k === 'amt' ? 'desc' : 'asc' }; }
       renderRows();
