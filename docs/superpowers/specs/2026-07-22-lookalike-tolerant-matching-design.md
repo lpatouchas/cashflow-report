@@ -46,6 +46,12 @@ that is genuinely different.
   emit precomposed (NFC) text already, so the homoglyph map alone solves every
   case observed. If a decomposed export ever appears, adding `norm.NFC` is a
   localized one-line change at that point.
+- **Branch matching in `ReconcileVISA` (`transaction.go:282`).** The
+  `Κατάστημα` column header is Greek, but its *values* are numeric branch codes
+  (e.g. `99`, `12`, `81`). Digits have no Greek↔Latin homoglyph, so folding the
+  `branchMatch` comparison would be a strict no-op — it stays byte-exact. If
+  branch codes ever become alphabetic Greek text, this becomes a sixth fold
+  site (the change is one line and non-breaking).
 
 ## Design
 
