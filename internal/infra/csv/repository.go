@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/lpatouchas/cashflow-report/internal/domain/transaction"
+	"github.com/lpatouchas/cashflow-report/internal/textfold"
 )
 
 const (
@@ -33,7 +34,7 @@ func isVISAHeader(rec []string) bool {
 		return false
 	}
 	for i, w := range visaHeaderCols {
-		if strings.TrimSpace(rec[i]) != w {
+		if textfold.Fold(strings.TrimSpace(rec[i])) != textfold.Fold(w) {
 			return false
 		}
 	}
@@ -188,7 +189,7 @@ func parseVISARow(rec []string, file string, line int) (transaction.Transaction,
 	}
 
 	desc := strings.TrimSpace(rec[1])
-	if strings.TrimSpace(rec[5]) == visaStatusPending {
+	if textfold.Fold(strings.TrimSpace(rec[5])) == textfold.Fold(visaStatusPending) {
 		desc += " *"
 	}
 

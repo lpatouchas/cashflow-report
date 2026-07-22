@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -194,4 +195,33 @@ func TestVISAParsing(t *testing.T) {
 		require.Len(t, got, 1)
 		require.Equal(t, "OK", got[0].Description)
 	})
+}
+
+func TestIsVISAHeaderToleratesLookalikes(t *testing.T) {
+	// "Κατηγορία δαπάνης" typed with a Latin 'K' (U+004B) in place of the
+	// Greek 'Κ' (U+039A). Both fold to the same form, so it is still detected.
+	rec := []string{"Ημ/νία συναλλαγής", "Αιτιολογία", "Kατηγορία δαπάνης"}
+	if !isVISAHeader(rec) {
+		t.Errorf("VISA header with a Latin-lookalike leading letter should be detected")
+	}
+}
+
+func TestParseVISARowPendingStillFlags(t *testing.T) {
+	// Regression guard: after folding is wired in, the canonical pending
+	// status must still flag the description with a trailing " *".
+	rec := []string{
+		"01/02/2026 10:00", // date
+		"COOP PURCHASE",    // description
+		"Supermarket",      // category (col 2)
+		"",                 // col 3 (unused by parseVISARow)
+		"-12,50",           // amount (negative -> expense kept)
+		"Σε επεξεργασία",   // pending status (col 5)
+	}
+	got, ok := parseVISARow(rec, "visa.csv", 2)
+	if !ok {
+		t.Fatalf("expected VISA row to parse")
+	}
+	if !strings.HasSuffix(got.Description, " *") {
+		t.Errorf("pending row should be flagged with trailing *, got %q", got.Description)
+	}
 }
