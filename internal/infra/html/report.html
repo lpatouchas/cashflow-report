@@ -791,11 +791,11 @@ body { background: #2a2824; font-family: var(--sans); }
       if (t.amt > 0) { inc += t.amt; } else { exp += t.amt; }
     });
     if (!n) { if (selbar) selbar.hidden = true; return; }
+    var fig = function (label, v) {
+      return '<span>' + label + ' <b class="tx-amt ' + (v < 0 ? 'neg' : 'pos') + '">' + eu(v) + '</b></span>';
+    };
     selCountEl.textContent = n + ' selected';
-    selFigsEl.innerHTML =
-      '<span>Income <b>' + eu(inc) + '</b></span>' +
-      '<span>Expenses <b>' + eu(exp) + '</b></span>' +
-      '<span>Net <b>' + eu(inc + exp) + '</b></span>';
+    selFigsEl.innerHTML = fig('Income', inc) + fig('Expenses', exp) + fig('Net', inc + exp);
     selbar.hidden = false;
   };
 
