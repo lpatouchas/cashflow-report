@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/lpatouchas/cashflow-report/internal/textfold"
 )
 
 // Transaction is a single bank movement loaded from a CSV export.
@@ -157,10 +159,10 @@ func CompileRule(s RuleSpec) ExclusionRule {
 			return false
 		}
 		if s.MatchMode == MatchContains {
-			if !strings.Contains(t.Description, s.Description) {
+			if !strings.Contains(textfold.Fold(t.Description), textfold.Fold(s.Description)) {
 				return false
 			}
-		} else if t.Description != s.Description {
+		} else if textfold.Fold(t.Description) != textfold.Fold(s.Description) {
 			return false
 		}
 		if s.SourceFile != "" && t.SourceFile != s.SourceFile {
@@ -206,9 +208,9 @@ func (c ReconcileConfig) Validate() error {
 // rule. An empty MatchMode is treated as exact.
 func (c ReconcileConfig) descriptionMatches(desc string) bool {
 	if c.MatchMode == MatchContains {
-		return strings.Contains(desc, c.Description)
+		return strings.Contains(textfold.Fold(desc), textfold.Fold(c.Description))
 	}
-	return desc == c.Description
+	return textfold.Fold(desc) == textfold.Fold(c.Description)
 }
 
 // DefaultRuleSpecs is the built-in rule set expressed as data: the single

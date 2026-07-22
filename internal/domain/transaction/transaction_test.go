@@ -228,6 +228,35 @@ func TestCompileRule(t *testing.T) {
 	require.False(t, r(credit)) // credit is on b.csv
 }
 
+func TestCompileRuleContainsToleratesLookalike(t *testing.T) {
+	// Rule typed with Latin "VISA"; transaction description carries Greek
+	// lookalikes "VΙSΑ" (Greek Ι, Α). Contains match must still fire.
+	spec := RuleSpec{MatchMode: MatchContains, Description: "VISA"}
+	rule := CompileRule(spec)
+	txn := Transaction{Description: "MONTHLY VΙSΑ PAYMENT"}
+	if !rule(txn) {
+		t.Errorf("contains rule should match across Greek↔Latin lookalikes")
+	}
+}
+
+func TestCompileRuleExactToleratesLookalike(t *testing.T) {
+	spec := RuleSpec{MatchMode: MatchExact, Description: "VISA"}
+	rule := CompileRule(spec)
+	txn := Transaction{Description: "VΙSΑ"} // Greek Ι, Α
+	if !rule(txn) {
+		t.Errorf("exact rule should match across Greek↔Latin lookalikes")
+	}
+}
+
+func TestCompileRuleStillRejectsDifferentText(t *testing.T) {
+	// Folding must not create false matches: digit 0 vs letter O stays distinct.
+	spec := RuleSpec{MatchMode: MatchExact, Description: "COOP"}
+	rule := CompileRule(spec)
+	if rule(Transaction{Description: "CO0P"}) {
+		t.Errorf("exact rule must not match CO0P against COOP")
+	}
+}
+
 func TestDefaultRuleSpecs(t *testing.T) {
 	specs := DefaultRuleSpecs()
 	require.Len(t, specs, 1)
@@ -634,4 +663,18 @@ func TestReconcileVISA(t *testing.T) {
 		require.InDelta(t, 60, dec.Amount, 0.001)
 		require.Equal(t, day(2025, time.December, 31), dec.Date)
 	})
+}
+
+func TestReconcileDescriptionMatchesLookalike(t *testing.T) {
+	// Consolidation config typed with Latin "VISA"; bank lump description
+	// carries Greek lookalikes. The lump must be consolidated.
+	cfg := ReconcileConfig{Description: "VISA", MatchMode: MatchContains, Branch: "HQ"}
+	lump := Transaction{Description: "VΙSΑ CARD", Branch: "HQ", Amount: 100, IsDebit: true, SourceFile: "bank.csv"}
+	purchase := Transaction{Description: "SHOP", Amount: 40, IsDebit: true, IsVISA: true, Date: lump.Date}
+	out := ReconcileVISA([]Transaction{lump, purchase}, cfg)
+	for _, txn := range out {
+		if txn.Description == "VΙSΑ CARD" {
+			t.Errorf("VISA lump with lookalike description should have been consolidated, not passed through")
+		}
+	}
 }
