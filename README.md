@@ -7,6 +7,8 @@ browser (no terminal needed) or from the command line.
 > `.csv` exports** (semicolon-separated, with the Greek column headers and
 > `1.550,00`-style amounts shown below). Exports from other banks are not yet
 > supported. See [CSV format](#csv-format) for an example.
+## Demo
+Demo output report site can be found [here](https://htmlpreview.github.io/?https://github.com/lpatouchas/cashflow-report/blob/main/docs/demo/Monthly%20Review%20%E2%80%94%20Cashflow.html)
 
 ## Features
 
