@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
 <title>Monthly Review — Cashflow</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,13 +29,13 @@ a:hover { color: var(--ink); }
   --c-exp: #b7b7c6; --c-inc: #8b7cff; --c-sav: #5eead4; --c-trend: #3a3a46;
   --shadow: 0 40px 90px -50px rgba(0,0,0,.7);
 }
-/* almanac slot → Graphite (mint dark) */
+/* almanac slot → Graphite (mid-tone slate, between Midnight & Daylight) */
 .paper[data-edition="almanac"] {
-  --bg: #0b0c0e; --sheet: #131417; --panel2: #1a1c20; --ink: #f2f3f5; --muted: #8b9099;
-  --rule: #25282e; --hair: #1c1f24; --accent: #7cf0b4; --accent-soft: rgba(124,240,180,.12);
-  --pos: #7cf0b4; --neg: #ff9270;
-  --c-exp: #eceef1; --c-inc: #7c8592; --c-sav: #7cf0b4; --c-trend: #4a4f57;
-  --shadow: 0 40px 90px -50px rgba(0,0,0,.7);
+  --bg: #33373e; --sheet: #3c414a; --panel2: #464c56; --ink: #eef0f3; --muted: #aab0ba;
+  --rule: #545b66; --hair: #454b55; --accent: #7cf0b4; --accent-soft: rgba(124,240,180,.16);
+  --pos: #7cf0b4; --neg: #ff9c7a;
+  --c-exp: #e4e6ea; --c-inc: #9db4e6; --c-sav: #7cf0b4; --c-trend: #646c78;
+  --shadow: 0 40px 90px -50px rgba(0,0,0,.55);
 }
 /* ledger slot → Daylight (light) */
 .paper[data-edition="ledger"] {
@@ -232,6 +233,7 @@ a:hover { color: var(--ink); }
   background: var(--sheet); border: 1px solid var(--hair);
   border-radius: 16px; padding: 18px 24px 10px;
 }
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ledger-table { width: 100%; border-collapse: collapse; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .ledger-table th {
   font-family: var(--mono); font-size: 11px; font-weight: 600;
@@ -271,8 +273,8 @@ a:hover { color: var(--ink); }
   vertical-align: middle; margin-right: 10px; position: relative; border-radius: 3px; overflow: hidden;
 }
 .rate-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 3px; }
-.rate-num { font-family: var(--mono); font-size: 13px; color: var(--muted); }
-.rate-num.solo { color: var(--ink); font-weight: 600; }
+.rate-num { font-family: var(--mono); font-size: 13px; color: var(--c-sav); }
+.rate-num.solo { color: var(--c-sav); font-weight: 600; }
 
 .ledger-table tfoot td {
   border-bottom: none; border-top: 2px solid var(--ink);
@@ -303,11 +305,60 @@ a:hover { color: var(--ink); }
 .rate-num.neg { color: var(--neg); }
 
 @media (max-width: 680px) {
-  .hero { grid-template-columns: 1fr 1fr; }
-  .stat.lead { grid-column: span 2; border-left: none; border-top: 1px solid var(--hair); }
+  .paper { padding: 22px 12px 40px; }
+  /* hero → single column, each stat stacked under the previous (like the averages block) */
+  .hero { grid-template-columns: 1fr; }
+  .stat { padding: 18px 16px 20px; border-left: none; border-top: 1px solid var(--hair); }
+  .stat:first-child { border-top: none; }
+  .stat-label { margin-bottom: 10px; }
+  .stat.lead { grid-column: auto; }
+  .fig { padding: 18px 14px 14px; }
+  .averages { padding: 18px 16px 18px; }
   .avg-row { grid-template-columns: 1fr; }
+  .avg { padding: 14px 16px; }
+  .table-block { padding: 16px 14px 8px; }
   .ledger-table th, .ledger-table td { padding: 10px 8px; font-size: 12.5px; }
   .rate-bar { display: none; }
+  /* monthly breakdown: drop Expenses & Savings cols so it fits without scrolling — keep Month / Income / Rate */
+  .ledger-table th:nth-child(3), .ledger-table td:nth-child(3),
+  .ledger-table th:nth-child(4), .ledger-table td:nth-child(4) { display: none; }
+  /* chart: larger axis text (viewBox units) + fewer month labels so nothing collides */
+  .axis-x, .axis-y { font-size: 21px; }
+  .tip { min-width: 132px; max-width: 66vw; padding: 9px 10px; }
+
+  /* transaction modal → near full-screen sheet, columns kept reachable */
+  .tx-modal { padding: 0; }
+  .tx-dialog {
+    width: 100%; max-width: 100%; max-height: 100vh; max-height: 100dvh;
+    border-radius: 0; border-left: none; border-right: none;
+  }
+  .tx-head { padding: 16px 16px 12px; }
+  .tx-title { font-size: 19px; }
+  /* totals kept on a single row: 3 equal columns, label stacked over value (no wrap) */
+  .tx-totals {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    padding: 11px 16px; flex-wrap: nowrap;
+  }
+  .tx-totals span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .tx-totals b { font-size: 13px; white-space: nowrap; }
+  .tx-accounts { padding: 10px 16px 12px; }
+  .tx-scroll { overflow: auto; }
+  .tx-table th, .tx-table td { padding: 9px 4px; }
+  /* Date collapses to its content; Description absorbs all slack so it sits right
+     after the date instead of leaving a wide gap between the two columns */
+  .tx-table th:first-child, .tx-table td:first-child { padding-left: 12px; width: 1%; }
+  .tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: 100%; }
+  .tx-table th:nth-child(3), .tx-table td:nth-child(3) { padding-right: 12px; }
+  .tx-table th { font-size: 9.5px; }
+  .tx-table td { font-size: 12.5px; }
+  /* drop the Source column on mobile — least essential detail */
+  .tx-table th:nth-child(4), .tx-table td:nth-child(4) { display: none; }
+  /* keep long descriptions from blowing out the row */
+  .tx-desc {
+    display: inline-block; max-width: 46vw; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom;
+  }
+  .tx-selbar { gap: 8px 14px; padding: 9px 14px; flex-wrap: wrap; }
 }
 
 /* ---------- TRANSACTION MODAL ---------- */
@@ -344,12 +395,23 @@ a:hover { color: var(--ink); }
   border-bottom: 1px solid var(--hair); font-variant-numeric: tabular-nums;
 }
 .tx-totals b { color: var(--ink); font-weight: 600; }
+.tx-totals b.exp { color: var(--neg); }
+.tx-totals b.pos { color: var(--c-sav); }
+.tx-totals b.neg { color: var(--neg); }
 .tx-accounts { padding: 12px 26px 14px; border-bottom: 1px solid var(--hair); }
 .tx-accounts[hidden] { display: none; }
 .tx-acc-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  width: 100%; margin: 0 0 8px; padding: 0; cursor: pointer;
+  background: transparent; border: none; text-align: left;
   font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  text-transform: uppercase; color: var(--muted); transition: color .15s;
 }
+.tx-acc-head:hover { color: var(--ink); }
+.tx-acc-caret { font-size: 10px; transition: transform .18s ease; }
+.tx-accounts.collapsed .tx-acc-caret { transform: rotate(-90deg); }
+.tx-accounts.collapsed .tx-acc-rows { display: none; }
+.tx-accounts.collapsed .tx-acc-head { margin-bottom: 0; }
 .tx-acc-row {
   display: flex; justify-content: space-between; gap: 16px; padding: 4px 0;
   font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums;
@@ -373,8 +435,11 @@ a:hover { color: var(--ink); }
 }
 .tx-table td.r { text-align: right; }
 .tx-table td.l { text-align: left; }
-.tx-table th:first-child, .tx-table td:first-child,
-.tx-table th:nth-child(2), .tx-table td:nth-child(2) { white-space: nowrap; }
+.tx-table th:first-child, .tx-table td:first-child { white-space: nowrap; }
+.tx-table tbody tr { cursor: pointer; user-select: none; transition: background .12s; }
+.tx-table tbody tr:hover { background: var(--panel2); }
+.tx-table tbody tr.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.tx-table tbody tr.sel:hover { background: var(--accent-soft); }
 .tx-amt.pos { color: var(--c-sav); }
 .tx-amt.neg { color: var(--neg); }
 .tx-src { color: var(--muted); font-size: 12px; }
@@ -382,22 +447,21 @@ a:hover { color: var(--ink); }
   font-family: var(--mono); font-size: 10px; color: var(--accent);
   letter-spacing: .04em; white-space: nowrap; margin-left: 8px;
 }
-.tx-check { width: 1%; white-space: nowrap; }
-.tx-row-check, .tx-all-check { cursor: pointer; accent-color: var(--accent); margin: 0; }
 .tx-selbar {
-  display: flex; align-items: center; gap: 22px; padding: 13px 26px;
+  display: flex; align-items: center; gap: 8px 16px; padding: 9px 18px;
   border-top: 1px solid var(--rule); background: var(--panel2);
   font-family: var(--mono); font-size: 12px; color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 .tx-selbar[hidden] { display: none; }
 .tx-selbar b { color: var(--ink); font-weight: 600; }
-.tx-sel-count { font-weight: 600; color: var(--ink); }
-.tx-sel-figs { display: inline-flex; gap: 22px; flex-wrap: wrap; }
+.tx-sel-count { font-weight: 600; color: var(--ink); white-space: nowrap; }
+.tx-sel-figs { display: inline-flex; gap: 16px; flex-wrap: wrap; }
 .tx-sel-clear {
-  margin-left: auto; background: transparent; border: 1px solid var(--rule);
-  color: var(--muted); font-family: var(--mono); font-size: 12px;
-  padding: 4px 12px; cursor: pointer; border-radius: 8px;
+  margin-left: auto; flex: none; background: transparent; border: 1px solid var(--rule);
+  color: var(--muted); font-family: var(--mono); font-size: 15px; line-height: 1;
+  width: 24px; height: 24px; display: inline-flex; align-items: center;
+  justify-content: center; cursor: pointer; border-radius: 6px;
 }
 .tx-sel-clear:hover { color: var(--ink); border-color: var(--ink); }
 
@@ -497,6 +561,7 @@ a:hover { color: var(--ink); }
           <h2>Monthly Breakdown</h2>
           <span class="block-hint">Click a column to sort</span>
         </div>
+        <div class="table-scroll">
         <table class="ledger-table" id="ledger">
           <thead>
             <tr>
@@ -528,6 +593,7 @@ a:hover { color: var(--ink); }
             </tr>
           </tfoot>
         </table>
+        </div>
       </div>
     </section>
 
@@ -551,14 +617,15 @@ a:hover { color: var(--ink); }
       </div>
       <div class="tx-totals" id="tx-totals"></div>
       <div class="tx-accounts" id="tx-accounts" hidden>
-        <div class="tx-acc-head">By Account</div>
+        <button class="tx-acc-head" id="tx-acc-toggle" type="button" aria-expanded="true" aria-controls="tx-acc-rows">
+          <span>By Account</span><span class="tx-acc-caret" aria-hidden="true">▾</span>
+        </button>
         <div class="tx-acc-rows" id="tx-acc-rows"></div>
       </div>
       <div class="tx-scroll">
         <table class="tx-table" id="tx-table">
           <thead>
             <tr>
-              <th class="l tx-check"><input type="checkbox" id="tx-all" class="tx-all-check" aria-label="Select all transactions"></th>
               <th class="l active" data-key="k"><span class="th-in">Date<span class="sort-arrow show">▼</span></span></th>
               <th class="l" data-key="desc"><span class="th-in">Description<span class="sort-arrow">▼</span></span></th>
               <th class="r" data-key="amt"><span class="th-in">Amount<span class="sort-arrow">▼</span></span></th>
@@ -571,7 +638,7 @@ a:hover { color: var(--ink); }
       <div class="tx-selbar" id="tx-selbar" hidden>
         <span class="tx-sel-count" id="tx-sel-count"></span>
         <span class="tx-sel-figs" id="tx-sel-figs"></span>
-        <button class="tx-sel-clear" id="tx-sel-clear" type="button">Clear</button>
+        <button class="tx-sel-clear" id="tx-sel-clear" type="button" title="Clear selection" aria-label="Clear selection">×</button>
       </div>
     </div>
   </div>
@@ -689,7 +756,9 @@ a:hover { color: var(--ink); }
       svg += '<line class="grid" x1="' + PAD.l + '" x2="' + (W - PAD.r) + '" y1="' + y(g).toFixed(1) + '" y2="' + y(g).toFixed(1) + '"/>';
       svg += '<text class="axis-y" x="' + (PAD.l - 12) + '" y="' + (y(g) + 4).toFixed(1) + '" text-anchor="end">€' + Math.round(g).toLocaleString('de-DE') + '</text>';
     });
+    var labelStep = (window.innerWidth <= 680 && M.length > 6) ? Math.ceil(M.length / 6) : 1;
     M.forEach(function (m, i) {
+      if (i % labelStep !== 0 && i !== M.length - 1) return;
       svg += '<text class="axis-x" x="' + x(i).toFixed(1) + '" y="' + (H - 16) + '" text-anchor="middle">' + esc(m.short) + '</text>';
     });
     active.forEach(function (s) {
@@ -758,6 +827,13 @@ a:hover { color: var(--ink); }
   }
 
   render();
+
+  // re-render on viewport changes so label density / sizing track orientation & resize
+  var rt;
+  window.addEventListener('resize', function () {
+    clearTimeout(rt);
+    rt = setTimeout(render, 150);
+  });
 })();
 </script>
 <script>
@@ -771,6 +847,7 @@ a:hover { color: var(--ink); }
   var titleEl = document.getElementById('tx-title');
   var totalsEl = document.getElementById('tx-totals');
   var acctWrap = document.getElementById('tx-accounts');
+  var acctToggle = document.getElementById('tx-acc-toggle');
   var acctRowsEl = document.getElementById('tx-acc-rows');
   var bodyEl = document.getElementById('tx-body');
   var tableEl = document.getElementById('tx-table');
@@ -778,7 +855,6 @@ a:hover { color: var(--ink); }
   var selCountEl = document.getElementById('tx-sel-count');
   var selFigsEl = document.getElementById('tx-sel-figs');
   var selClearBtn = document.getElementById('tx-sel-clear');
-  var allEl = document.getElementById('tx-all');
   var selected = new Set();
   var lastTrigger = null;
   var rows = [];
@@ -788,13 +864,11 @@ a:hover { color: var(--ink); }
     return (v < 0 ? '−€' : '€') + Math.abs(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
   var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
-
-  var syncSelAll = function () {
-    if (!allEl) return;
-    var n = rows.length, s = 0;
-    rows.forEach(function (t) { if (selected.has(t)) s++; });
-    allEl.checked = n > 0 && s === n;
-    allEl.indeterminate = s > 0 && s < n;
+  // compact day/month — derive "12/05" from the "2026-05-12" sort key
+  var shortDate = function (t) {
+    var parts = String(t.k || '').split('-');
+    if (parts.length === 3) return parts[2] + '/' + parts[1];
+    return t.date || '';
   };
 
   var renderSelbar = function () {
@@ -808,7 +882,7 @@ a:hover { color: var(--ink); }
       return '<span>' + label + ' <b class="tx-amt ' + (v < 0 ? 'neg' : 'pos') + '">' + eu(v) + '</b></span>';
     };
     selCountEl.textContent = n + ' selected';
-    selFigsEl.innerHTML = fig('Income', inc) + fig('Expenses', exp) + fig('Net', inc + exp);
+    selFigsEl.innerHTML = fig('Inc', inc) + fig('Exp', exp) + fig('Net', inc + exp);
     selbar.hidden = false;
   };
 
@@ -825,19 +899,15 @@ a:hover { color: var(--ink); }
     sorted.forEach(function (t) {
       var cls = t.amt < 0 ? 'neg' : 'pos';
       var cat = t.cat ? ' <span class="tx-cat">' + esc(t.cat) + '</span>' : '';
-      html += '<tr><td class="l tx-check"><input type="checkbox" class="tx-row-check" aria-label="Select transaction"></td>' +
-              '<td class="l">' + esc(t.date) + '</td>' +
-              '<td class="l">' + esc(t.desc) + cat + '</td>' +
+      html += '<tr class="tx-r' + (selected.has(t) ? ' sel' : '') + '" aria-pressed="' + (selected.has(t) ? 'true' : 'false') + '">' +
+              '<td class="l" title="' + esc(t.date) + '">' + esc(shortDate(t)) + '</td>' +
+              '<td class="l"><span class="tx-desc" title="' + esc(t.desc) + '">' + esc(t.desc) + '</span>' + cat + '</td>' +
               '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
               '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
     });
     bodyEl.innerHTML = html;
     var trs = bodyEl.querySelectorAll('tr');
-    sorted.forEach(function (t, i) {
-      var cb = trs[i].querySelector('.tx-row-check');
-      if (cb) { cb._tx = t; cb.checked = selected.has(t); }
-    });
-    syncSelAll();
+    sorted.forEach(function (t, i) { trs[i]._tx = t; });
     tableEl.querySelectorAll('th').forEach(function (th) {
       var on = th.getAttribute('data-key') === sort.key;
       th.classList.toggle('active', on);
@@ -853,10 +923,11 @@ a:hover { color: var(--ink); }
     lastTrigger = tr;
     var mcell = tr.querySelector('.mcell');
     titleEl.textContent = mcell ? mcell.textContent.replace(/best|lean/gi, '').trim() : key;
+    var savings = parseFloat(tr.getAttribute('data-savings'));
     totalsEl.innerHTML =
       '<span>Income <b>' + eu(parseFloat(tr.getAttribute('data-income'))) + '</b></span>' +
-      '<span>Expenses <b>' + eu(parseFloat(tr.getAttribute('data-expenses'))) + '</b></span>' +
-      '<span>Savings <b>' + eu(parseFloat(tr.getAttribute('data-savings'))) + '</b></span>';
+      '<span>Expenses <b class="exp">' + eu(parseFloat(tr.getAttribute('data-expenses'))) + '</b></span>' +
+      '<span>Savings <b class="' + (savings < 0 ? 'neg' : 'pos') + '">' + eu(savings) + '</b></span>';
     var accts = ACCT[key] || [];
     if (accts.length) {
       var ah = '';
@@ -903,21 +974,22 @@ a:hover { color: var(--ink); }
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !modal.hidden) close();
   });
-  bodyEl.addEventListener('change', function (e) {
-    var cb = e.target;
-    if (!cb || !cb.classList || !cb.classList.contains('tx-row-check')) return;
-    if (cb.checked) { selected.add(cb._tx); } else { selected.delete(cb._tx); }
-    syncSelAll();
+  bodyEl.addEventListener('click', function (e) {
+    var tr = e.target.closest('tr');
+    if (!tr || !tr._tx) return;
+    var t = tr._tx, on = !selected.has(t);
+    if (on) { selected.add(t); } else { selected.delete(t); }
+    tr.classList.toggle('sel', on);
+    tr.setAttribute('aria-pressed', on ? 'true' : 'false');
     renderSelbar();
   });
-  if (allEl) {
-    allEl.addEventListener('change', function () {
-      rows.forEach(function (t) { if (allEl.checked) { selected.add(t); } else { selected.delete(t); } });
-      renderRows();
-      renderSelbar();
+  if (selClearBtn) { selClearBtn.addEventListener('click', clearSel); }
+  if (acctToggle) {
+    acctToggle.addEventListener('click', function () {
+      var collapsed = acctWrap.classList.toggle('collapsed');
+      acctToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
     });
   }
-  if (selClearBtn) { selClearBtn.addEventListener('click', clearSel); }
   tableEl.querySelectorAll('th').forEach(function (th) {
     th.addEventListener('click', function () {
       var k = th.getAttribute('data-key');

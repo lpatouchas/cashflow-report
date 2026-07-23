@@ -76,7 +76,6 @@ func TestHandleGenerate(t *testing.T) {
 
 		require.Equal(t, http.StatusOK, rec.Code)
 		require.Contains(t, rec.Body.String(), "May 2026")
-		require.Contains(t, rec.Body.String(), "Generate another")
 	})
 
 	t.Run("applies a submitted exclusion rule", func(t *testing.T) {
@@ -256,9 +255,4 @@ func TestParseRulesSkipsBlankRows(t *testing.T) {
 func TestBrowserURL(t *testing.T) {
 	require.Equal(t, "http://localhost:8080", browserURL(":8080"))
 	require.Equal(t, "http://127.0.0.1:9000", browserURL("127.0.0.1:9000"))
-}
-
-func TestWithBackLink(t *testing.T) {
-	require.Contains(t, string(withBackLink([]byte("<html><body>x</body></html>"))), "Generate another")
-	require.Equal(t, "no-body", string(withBackLink([]byte("no-body"))))
 }

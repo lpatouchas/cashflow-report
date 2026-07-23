@@ -329,9 +329,9 @@ func TestRender(t *testing.T) {
 		require.NoError(t, err)
 		content := string(data)
 
-		require.Contains(t, content, `id="tx-all"`)       // select-all checkbox
-		require.Contains(t, content, `id="tx-selbar"`)    // sticky footer bar
-		require.Contains(t, content, `id="tx-sel-figs"`)  // running-total figures slot
-		require.Contains(t, content, `id="tx-sel-clear"`) // clear button
+		require.Contains(t, content, `.tx-table tbody tr.sel`) // click-to-select row styling
+		require.Contains(t, content, `id="tx-selbar"`)         // sticky footer bar
+		require.Contains(t, content, `id="tx-sel-figs"`)       // running-total figures slot
+		require.Contains(t, content, `id="tx-sel-clear"`)      // clear button
 	})
 }

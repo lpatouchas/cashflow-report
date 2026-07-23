@@ -118,7 +118,7 @@ func (s *Server) handleGenerate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write(withBackLink(buf.Bytes()))
+	_, _ = w.Write(buf.Bytes())
 }
 
 // saveUpload writes one uploaded file into dir under its base filename.
@@ -137,20 +137,6 @@ func saveUpload(dir string, fh *multipart.FileHeader) error {
 
 	_, err = io.Copy(dst, src)
 	return err
-}
-
-// withBackLink injects a fixed "Generate another" link before </body> so the
-// served report links back to the upload page. If </body> is absent the page
-// is returned unchanged.
-func withBackLink(page []byte) []byte {
-	marker := []byte("</body>")
-	if !bytes.Contains(page, marker) {
-		return page
-	}
-	link := []byte(`<a href="/" style="position:fixed;top:12px;right:16px;z-index:9999;` +
-		`font:14px sans-serif;background:#111;color:#fff;padding:8px 12px;` +
-		`border-radius:6px;text-decoration:none">&#8635; Generate another</a></body>`)
-	return bytes.Replace(page, marker, link, 1)
 }
 
 // browserURL derives a clickable localhost URL from a listen address such as
