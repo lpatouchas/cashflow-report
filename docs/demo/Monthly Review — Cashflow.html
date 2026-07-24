@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<!-- saved from url=(0030)http://localhost:8080/generate -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Monthly Review — Cashflow</title>
-<link rel="preconnect" href="https://fonts.googleapis.com/">
-<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="Monthly%20Review%20—%20Cashflow_files/css2" rel="stylesheet">
 <style>
 :root {
@@ -317,7 +317,8 @@ a:hover { color: var(--ink); }
   .avg-row { grid-template-columns: 1fr; }
   .avg { padding: 14px 16px; }
   .table-block { padding: 16px 14px 8px; }
-  .ledger-table th, .ledger-table td { padding: 10px 8px; font-size: 12.5px; }
+  .ledger-table th, .ledger-table td { padding: 10px 3px; font-size: 12.5px; }
+  .ledger-table th:first-child, .ledger-table td:first-child { padding-left: 0; }
   .rate-bar { display: none; }
    
   .ledger-table th:nth-child(3), .ledger-table td:nth-child(3),
@@ -345,13 +346,14 @@ a:hover { color: var(--ink); }
   .tx-scroll { overflow: auto; }
   .tx-table th, .tx-table td { padding: 9px 4px; }
    
-  .tx-table th:first-child, .tx-table td:first-child { padding-left: 12px; width: 1%; }
-  .tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: 100%; }
-  .tx-table th:nth-child(3), .tx-table td:nth-child(3) { padding-right: 12px; }
+  .tx-table th:first-child, .tx-table td:first-child { padding-left: 6px; width: 100%; }
+  .tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: 1px; padding-right: 12px; }
   .tx-table th { font-size: 9.5px; }
   .tx-table td { font-size: 12.5px; }
    
-  .tx-table th:nth-child(4), .tx-table td:nth-child(4) { display: none; }
+  .tx-table th:nth-child(3), .tx-table td:nth-child(3) { display: none; }
+   
+  .tx-table tr.tx-day td.tx-day-cell { padding: 9px 6px 5px; top: 32px; }
    
   .tx-desc {
     display: inline-block; max-width: 46vw; overflow: hidden;
@@ -434,7 +436,16 @@ a:hover { color: var(--ink); }
 }
 .tx-table td.r { text-align: right; }
 .tx-table td.l { text-align: left; }
-.tx-table th:first-child, .tx-table td:first-child { white-space: nowrap; }
+ 
+.tx-table th:nth-child(2), .tx-table td:nth-child(2) { white-space: nowrap; }
+ 
+.tx-table tr.tx-day { cursor: default; }
+.tx-table tr.tx-day td.tx-day-cell {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 12px 26px 7px; border-bottom: 1px solid var(--rule);
+  background: var(--panel2); position: sticky; top: 37px; z-index: 1;
+}
 .tx-table tbody tr { cursor: pointer; user-select: none; transition: background .12s; }
 .tx-table tbody tr:hover { background: var(--panel2); }
 .tx-table tbody tr.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
@@ -498,7 +509,7 @@ a:hover { color: var(--ink); }
       <div class="mast-rule">
         <span>Vol. I</span>
         <span>A statement of income, outflow &amp; savings</span>
-        <span>Generated 23 July 2026 · 22:56</span>
+        <span>Generated 24 July 2026 · 15:31</span>
       </div>
     </header>
 
@@ -511,13 +522,13 @@ a:hover { color: var(--ink); }
       </div>
       <div class="stat">
         <div class="stat-label">Total Expenses</div>
-        <div class="stat-value">€18.300,00</div>
-        <div class="stat-sub">€1.525,00 / mo</div>
+        <div class="stat-value">€18.545,00</div>
+        <div class="stat-sub">€1.545,42 / mo</div>
       </div>
       <div class="stat lead accent">
         <div class="stat-label">Total Savings</div>
-        <div class="stat-value">€3.300,00</div>
-        <div class="stat-sub">15,3 % saved</div>
+        <div class="stat-value">€3.055,00</div>
+        <div class="stat-sub">14,1 % saved</div>
       </div>
     </section>
 
@@ -534,7 +545,7 @@ a:hover { color: var(--ink); }
           <button class="toggle savings" data-series="savings" aria-pressed="false"><span class="swatch savings"></span>Savings</button>
           <button id="toggle-trend" class="toggle trend on" aria-pressed="true"><span class="swatch trendsw"></span>Trend</button>
         </div>
-        <div class="chart-wrap" id="chart-wrap"><svg viewBox="0 0 1000 440" class="chart" role="img" preserveAspectRatio="none"><line class="grid" x1="64" x2="972" y1="396.0" y2="396.0"></line><text class="axis-y" x="52" y="400.0" text-anchor="end">€1.265</text><line class="grid" x1="64" x2="972" y1="304.0" y2="304.0"></line><text class="axis-y" x="52" y="308.0" text-anchor="end">€1.482</text><line class="grid" x1="64" x2="972" y1="212.0" y2="212.0"></line><text class="axis-y" x="52" y="216.0" text-anchor="end">€1.700</text><line class="grid" x1="64" x2="972" y1="120.0" y2="120.0"></line><text class="axis-y" x="52" y="124.0" text-anchor="end">€1.918</text><line class="grid" x1="64" x2="972" y1="28.0" y2="28.0"></line><text class="axis-y" x="52" y="32.0" text-anchor="end">€2.135</text><text class="axis-x" x="64.0" y="424" text-anchor="middle">Jan</text><text class="axis-x" x="146.5" y="424" text-anchor="middle">Feb</text><text class="axis-x" x="229.1" y="424" text-anchor="middle">Mar</text><text class="axis-x" x="311.6" y="424" text-anchor="middle">Apr</text><text class="axis-x" x="394.2" y="424" text-anchor="middle">May</text><text class="axis-x" x="476.7" y="424" text-anchor="middle">Jun</text><text class="axis-x" x="559.3" y="424" text-anchor="middle">Jul</text><text class="axis-x" x="641.8" y="424" text-anchor="middle">Aug</text><text class="axis-x" x="724.4" y="424" text-anchor="middle">Sep</text><text class="axis-x" x="806.9" y="424" text-anchor="middle">Oct</text><text class="axis-x" x="889.5" y="424" text-anchor="middle">Nov</text><text class="axis-x" x="972.0" y="424" text-anchor="middle">Dec</text><path class="series-area expenses" d="M64.0,330.4 L146.5,347.3 L229.1,313.5 L311.6,334.6 L394.2,305.0 L476.7,317.7 L559.3,161.3 L641.8,271.2 L724.4,326.2 L806.9,338.8 L889.5,309.2 L972.0,76.7 L972.0,396.0 L64.0,396.0 Z"></path><path class="series-line expenses" d="M64.0,330.4 L146.5,347.3 L229.1,313.5 L311.6,334.6 L394.2,305.0 L476.7,317.7 L559.3,161.3 L641.8,271.2 L724.4,326.2 L806.9,338.8 L889.5,309.2 L972.0,76.7"></path><path class="trendline" d="M64.0,348.6 L146.5,337.2 L229.1,325.8 L311.6,314.4 L394.2,303.1 L476.7,291.7 L559.3,280.3 L641.8,268.9 L724.4,257.5 L806.9,246.1 L889.5,234.8 L972.0,223.4"></path><circle class="dot expenses" cx="64.0" cy="330.4" r="3.2"></circle><circle class="dot expenses" cx="146.5" cy="347.3" r="3.2"></circle><circle class="dot expenses" cx="229.1" cy="313.5" r="3.2"></circle><circle class="dot expenses" cx="311.6" cy="334.6" r="3.2"></circle><circle class="dot expenses" cx="394.2" cy="305.0" r="3.2"></circle><circle class="dot expenses" cx="476.7" cy="317.7" r="3.2"></circle><circle class="dot expenses" cx="559.3" cy="161.3" r="3.2"></circle><circle class="dot expenses" cx="641.8" cy="271.2" r="3.2"></circle><circle class="dot expenses" cx="724.4" cy="326.2" r="3.2"></circle><circle class="dot expenses" cx="806.9" cy="338.8" r="3.2"></circle><circle class="dot expenses" cx="889.5" cy="309.2" r="3.2"></circle><circle class="dot expenses" cx="972.0" cy="76.7" r="3.2"></circle><rect class="hit" data-i="0" x="26.2" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="1" x="108.7" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="2" x="191.3" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="3" x="273.8" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="4" x="356.3" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="5" x="438.9" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="6" x="521.4" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="7" x="604.0" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="8" x="686.5" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="9" x="769.1" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="10" x="851.6" y="28" width="75.7" height="368" fill="transparent"></rect><rect class="hit" data-i="11" x="934.2" y="28" width="75.7" height="368" fill="transparent"></rect></svg></div>
+        <div class="chart-wrap" id="chart-wrap"></div>
       </figure>
     </section>
 
@@ -547,8 +558,8 @@ a:hover { color: var(--ink); }
       </div>
       <div class="avg-row">
         <div class="avg"><span class="avg-l">Income</span><span class="avg-v">€1.800,00</span></div>
-        <div class="avg"><span class="avg-l">Expenses</span><span class="avg-v">€1.525,00</span></div>
-        <div class="avg"><span class="avg-l">Savings</span><span class="avg-v strong">€275,00</span></div>
+        <div class="avg"><span class="avg-l">Expenses</span><span class="avg-v">€1.545,42</span></div>
+        <div class="avg"><span class="avg-l">Savings</span><span class="avg-v strong">€254,58</span></div>
       </div>
     </section>
 
@@ -573,110 +584,110 @@ a:hover { color: var(--ink); }
           </thead>
           <tbody>
 
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-
-          <tr class="row clickable best" data-key="2025-12" data-income="3410" data-expenses="2020" data-savings="1390" data-rate="0.40762463343108507" tabindex="0" role="button" aria-label="View December 2025 transactions">
+            <tr class="row clickable best" data-key="2025-12" data-income="3410" data-expenses="2204.5" data-savings="1205.5" data-rate="0.3535190615835777" tabindex="0" role="button" aria-label="View December 2025 transactions">
               <td class="l mcell">December 2025<span class="tag best">best</span></td>
               <td class="r num">€3.410,00</td>
-              <td class="r num">€2.020,00</td>
-              <td class="r num strong">€1.390,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 100.0%"></span></span><span class="rate-num">40,8 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-11" data-income="1600" data-expenses="1470" data-savings="130" data-rate="0.08125" tabindex="0" role="button" aria-label="View November 2025 transactions">
+              <td class="r num">€2.204,50</td>
+              <td class="r num strong">€1.205,50</td>
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 100.0%"></span></span><span class="rate-num">35,4 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-11" data-income="1600" data-expenses="1523" data-savings="77" data-rate="0.048125" tabindex="0" role="button" aria-label="View November 2025 transactions">
               <td class="l mcell">November 2025</td>
               <td class="r num">€1.600,00</td>
-              <td class="r num">€1.470,00</td>
-              <td class="r num strong">€130,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 19.9%"></span></span><span class="rate-num">8,1 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-10" data-income="1600" data-expenses="1400" data-savings="200" data-rate="0.125" tabindex="0" role="button" aria-label="View October 2025 transactions">
+              <td class="r num">€1.523,00</td>
+              <td class="r num strong">€77,00</td>
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 13.6%"></span></span><span class="rate-num">4,8 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-10" data-income="1600" data-expenses="1400" data-savings="200" data-rate="0.125" tabindex="0" role="button" aria-label="View October 2025 transactions">
               <td class="l mcell">October 2025</td>
               <td class="r num">€1.600,00</td>
               <td class="r num">€1.400,00</td>
               <td class="r num strong">€200,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 30.7%"></span></span><span class="rate-num">12,5 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-09" data-income="1805" data-expenses="1430" data-savings="375" data-rate="0.2077562326869806" tabindex="0" role="button" aria-label="View September 2025 transactions">
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 35.4%"></span></span><span class="rate-num">12,5 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-09" data-income="1805" data-expenses="1430" data-savings="375" data-rate="0.2077562326869806" tabindex="0" role="button" aria-label="View September 2025 transactions">
               <td class="l mcell">September 2025</td>
               <td class="r num">€1.805,00</td>
               <td class="r num">€1.430,00</td>
               <td class="r num strong">€375,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 51.0%"></span></span><span class="rate-num">20,8 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-08" data-income="1600" data-expenses="1560" data-savings="40" data-rate="0.025" tabindex="0" role="button" aria-label="View August 2025 transactions">
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 58.8%"></span></span><span class="rate-num">20,8 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-08" data-income="1600" data-expenses="1560" data-savings="40" data-rate="0.025" tabindex="0" role="button" aria-label="View August 2025 transactions">
               <td class="l mcell">August 2025</td>
               <td class="r num">€1.600,00</td>
               <td class="r num">€1.560,00</td>
               <td class="r num strong">€40,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 6.1%"></span></span><span class="rate-num">2,5 %</span></td>
-            </tr><tr class="row clickable worst" data-key="2025-07" data-income="1600" data-expenses="1820" data-savings="-220" data-rate="-0.1375" tabindex="0" role="button" aria-label="View July 2025 transactions">
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 7.1%"></span></span><span class="rate-num">2,5 %</span></td>
+            </tr>
+
+            <tr class="row clickable worst" data-key="2025-07" data-income="1600" data-expenses="1827.5" data-savings="-227.5" data-rate="-0.1421875" tabindex="0" role="button" aria-label="View July 2025 transactions">
               <td class="l mcell">July 2025<span class="tag worst">lean</span></td>
               <td class="r num">€1.600,00</td>
-              <td class="r num">€1.820,00</td>
-              <td class="r num strong neg">-€220,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 0.0%"></span></span><span class="rate-num neg">-13,8 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-06" data-income="1800" data-expenses="1450" data-savings="350" data-rate="0.19444444444444445" tabindex="0" role="button" aria-label="View June 2025 transactions">
+              <td class="r num">€1.827,50</td>
+              <td class="r num strong neg">-€227,50</td>
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 0.0%"></span></span><span class="rate-num neg">-14,2 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-06" data-income="1800" data-expenses="1450" data-savings="350" data-rate="0.19444444444444445" tabindex="0" role="button" aria-label="View June 2025 transactions">
               <td class="l mcell">June 2025</td>
               <td class="r num">€1.800,00</td>
               <td class="r num">€1.450,00</td>
               <td class="r num strong">€350,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 47.7%"></span></span><span class="rate-num">19,4 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-05" data-income="1600" data-expenses="1480" data-savings="120" data-rate="0.075" tabindex="0" role="button" aria-label="View May 2025 transactions">
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 55.0%"></span></span><span class="rate-num">19,4 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-05" data-income="1600" data-expenses="1480" data-savings="120" data-rate="0.075" tabindex="0" role="button" aria-label="View May 2025 transactions">
               <td class="l mcell">May 2025</td>
               <td class="r num">€1.600,00</td>
               <td class="r num">€1.480,00</td>
               <td class="r num strong">€120,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 18.4%"></span></span><span class="rate-num">7,5 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-04" data-income="1600" data-expenses="1410" data-savings="190" data-rate="0.11875" tabindex="0" role="button" aria-label="View April 2025 transactions">
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 21.2%"></span></span><span class="rate-num">7,5 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-04" data-income="1600" data-expenses="1410" data-savings="190" data-rate="0.11875" tabindex="0" role="button" aria-label="View April 2025 transactions">
               <td class="l mcell">April 2025</td>
               <td class="r num">€1.600,00</td>
               <td class="r num">€1.410,00</td>
               <td class="r num strong">€190,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 29.1%"></span></span><span class="rate-num">11,9 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-03" data-income="1785" data-expenses="1460" data-savings="325" data-rate="0.18207282913165265" tabindex="0" role="button" aria-label="View March 2025 transactions">
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 33.6%"></span></span><span class="rate-num">11,9 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-03" data-income="1785" data-expenses="1460" data-savings="325" data-rate="0.18207282913165265" tabindex="0" role="button" aria-label="View March 2025 transactions">
               <td class="l mcell">March 2025</td>
               <td class="r num">€1.785,00</td>
               <td class="r num">€1.460,00</td>
               <td class="r num strong">€325,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 44.7%"></span></span><span class="rate-num">18,2 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-02" data-income="1600" data-expenses="1380" data-savings="220" data-rate="0.1375" tabindex="0" role="button" aria-label="View February 2025 transactions">
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 51.5%"></span></span><span class="rate-num">18,2 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-02" data-income="1600" data-expenses="1380" data-savings="220" data-rate="0.1375" tabindex="0" role="button" aria-label="View February 2025 transactions">
               <td class="l mcell">February 2025</td>
               <td class="r num">€1.600,00</td>
               <td class="r num">€1.380,00</td>
               <td class="r num strong">€220,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 33.7%"></span></span><span class="rate-num">13,8 %</span></td>
-            </tr><tr class="row clickable" data-key="2025-01" data-income="1600" data-expenses="1420" data-savings="180" data-rate="0.1125" tabindex="0" role="button" aria-label="View January 2025 transactions">
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 38.9%"></span></span><span class="rate-num">13,8 %</span></td>
+            </tr>
+
+            <tr class="row clickable" data-key="2025-01" data-income="1600" data-expenses="1420" data-savings="180" data-rate="0.1125" tabindex="0" role="button" aria-label="View January 2025 transactions">
               <td class="l mcell">January 2025</td>
               <td class="r num">€1.600,00</td>
               <td class="r num">€1.420,00</td>
               <td class="r num strong">€180,00</td>
-              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 27.6%"></span></span><span class="rate-num">11,2 %</span></td>
-            </tr></tbody>
+              <td class="r rate-cell"><span class="rate-bar"><span class="rate-fill" style="width: 31.8%"></span></span><span class="rate-num">11,2 %</span></td>
+            </tr>
+
+          </tbody>
           <tfoot>
             <tr>
               <td class="l">Total · 12 months</td>
               <td class="r num">€21.600,00</td>
-              <td class="r num">€18.300,00</td>
-              <td class="r num strong">€3.300,00</td>
-              <td class="r rate-cell"><span class="rate-num solo">15,3 %</span></td>
+              <td class="r num">€18.545,00</td>
+              <td class="r num strong">€3.055,00</td>
+              <td class="r rate-cell"><span class="rate-num solo">14,1 %</span></td>
             </tr>
           </tfoot>
         </table>
@@ -693,15 +704,15 @@ a:hover { color: var(--ink); }
 
   </div>
 
-  <div class="tx-modal" id="tx-modal" hidden="">
-    <div class="tx-backdrop" data-close=""></div>
+  <div class="tx-modal" id="tx-modal" hidden>
+    <div class="tx-backdrop" data-close></div>
     <div class="tx-dialog" role="dialog" aria-modal="true" aria-labelledby="tx-title">
       <div class="tx-head">
         <h2 class="tx-title" id="tx-title"></h2>
-        <button class="tx-close" data-close="" aria-label="Close">×</button>
+        <button class="tx-close" data-close aria-label="Close">&times;</button>
       </div>
       <div class="tx-totals" id="tx-totals"></div>
-      <div class="tx-accounts" id="tx-accounts" hidden="">
+      <div class="tx-accounts" id="tx-accounts" hidden>
         <button class="tx-acc-head" id="tx-acc-toggle" type="button" aria-expanded="true" aria-controls="tx-acc-rows">
           <span>By Account</span><span class="tx-acc-caret" aria-hidden="true">▾</span>
         </button>
@@ -711,7 +722,6 @@ a:hover { color: var(--ink); }
         <table class="tx-table" id="tx-table">
           <thead>
             <tr>
-              <th class="l active" data-key="k"><span class="th-in">Date<span class="sort-arrow show">▼</span></span></th>
               <th class="l" data-key="desc"><span class="th-in">Description<span class="sort-arrow">▼</span></span></th>
               <th class="r" data-key="amt"><span class="th-in">Amount<span class="sort-arrow">▼</span></span></th>
               <th class="l" data-key="src"><span class="th-in">Source<span class="sort-arrow">▼</span></span></th>
@@ -720,7 +730,7 @@ a:hover { color: var(--ink); }
           <tbody id="tx-body"></tbody>
         </table>
       </div>
-      <div class="tx-selbar" id="tx-selbar" hidden="">
+      <div class="tx-selbar" id="tx-selbar" hidden>
         <span class="tx-sel-count" id="tx-sel-count"></span>
         <span class="tx-sel-figs" id="tx-sel-figs"></span>
         <button class="tx-sel-clear" id="tx-sel-clear" type="button" title="Clear selection" aria-label="Clear selection">×</button>
@@ -729,7 +739,7 @@ a:hover { color: var(--ink); }
   </div>
 </div>
 
-<script>window.FIN = {"acct":{"2025-01":[{"src":"checking","inc":1600,"exp":1420}],"2025-02":[{"src":"checking","inc":1600,"exp":1380}],"2025-03":[{"src":"checking","inc":1600,"exp":1460},{"src":"savings","inc":185,"exp":0}],"2025-04":[{"src":"checking","inc":1600,"exp":1410}],"2025-05":[{"src":"checking","inc":1600,"exp":1480}],"2025-06":[{"src":"checking","inc":1600,"exp":1450},{"src":"savings","inc":200,"exp":0}],"2025-07":[{"src":"checking","inc":1600,"exp":1820}],"2025-08":[{"src":"checking","inc":1600,"exp":1560}],"2025-09":[{"src":"checking","inc":1600,"exp":1430},{"src":"savings","inc":205,"exp":0}],"2025-10":[{"src":"checking","inc":1600,"exp":1400}],"2025-11":[{"src":"checking","inc":1600,"exp":1470}],"2025-12":[{"src":"checking","inc":3200,"exp":2020},{"src":"savings","inc":210,"exp":0}]},"months":[{"label":"January 2025","short":"Jan","income":1600,"expenses":1420,"savings":180,"rate":0.1125},{"label":"February 2025","short":"Feb","income":1600,"expenses":1380,"savings":220,"rate":0.1375},{"label":"March 2025","short":"Mar","income":1785,"expenses":1460,"savings":325,"rate":0.18207282913165265},{"label":"April 2025","short":"Apr","income":1600,"expenses":1410,"savings":190,"rate":0.11875},{"label":"May 2025","short":"May","income":1600,"expenses":1480,"savings":120,"rate":0.075},{"label":"June 2025","short":"Jun","income":1800,"expenses":1450,"savings":350,"rate":0.19444444444444445},{"label":"July 2025","short":"Jul","income":1600,"expenses":1820,"savings":-220,"rate":-0.1375},{"label":"August 2025","short":"Aug","income":1600,"expenses":1560,"savings":40,"rate":0.025},{"label":"September 2025","short":"Sep","income":1805,"expenses":1430,"savings":375,"rate":0.2077562326869806},{"label":"October 2025","short":"Oct","income":1600,"expenses":1400,"savings":200,"rate":0.125},{"label":"November 2025","short":"Nov","income":1600,"expenses":1470,"savings":130,"rate":0.08125},{"label":"December 2025","short":"Dec","income":3410,"expenses":2020,"savings":1390,"rate":0.40762463343108507}],"tx":{"2025-01":[{"date":"01 January 2025","k":"2025-01-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 January 2025","k":"2025-01-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 January 2025","k":"2025-01-12","desc":"ΔΕΗ","amt":-130,"src":"checking"},{"date":"16 January 2025","k":"2025-01-16","desc":"SKLAVENITIS","amt":-450,"src":"checking"},{"date":"22 January 2025","k":"2025-01-22","desc":"CAFE NUMERO","amt":-200,"src":"checking"},{"date":"27 January 2025","k":"2025-01-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-02":[{"date":"01 February 2025","k":"2025-02-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 February 2025","k":"2025-02-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 February 2025","k":"2025-02-12","desc":"ΕΥΔΑΠ","amt":-140,"src":"checking"},{"date":"16 February 2025","k":"2025-02-16","desc":"SUPERMARKET ALFA","amt":-440,"src":"checking"},{"date":"22 February 2025","k":"2025-02-22","desc":"PUBLIC BOOKS","amt":-160,"src":"checking"},{"date":"27 February 2025","k":"2025-02-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-03":[{"date":"01 March 2025","k":"2025-03-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 March 2025","k":"2025-03-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 March 2025","k":"2025-03-12","desc":"ΔΕΗ","amt":-120,"src":"checking"},{"date":"16 March 2025","k":"2025-03-16","desc":"LIDL ATHENS","amt":-400,"src":"checking"},{"date":"22 March 2025","k":"2025-03-22","desc":"CINEMA VILLAGE","amt":-300,"src":"checking"},{"date":"27 March 2025","k":"2025-03-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"31 March 2025","k":"2025-03-31","desc":"ΤΟΚΟΙ ΚΑΤΑΘΕΣΕΩΝ","amt":185,"src":"savings"}],"2025-04":[{"date":"01 April 2025","k":"2025-04-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 April 2025","k":"2025-04-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 April 2025","k":"2025-04-12","desc":"ΕΥΔΑΠ","amt":-90,"src":"checking"},{"date":"16 April 2025","k":"2025-04-16","desc":"ΑΒ ΒΑΣΙΛΟΠΟΥΛΟΣ","amt":-400,"src":"checking"},{"date":"22 April 2025","k":"2025-04-22","desc":"RESTAURANT TO STEKI","amt":-280,"src":"checking"},{"date":"27 April 2025","k":"2025-04-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-05":[{"date":"01 May 2025","k":"2025-05-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 May 2025","k":"2025-05-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 May 2025","k":"2025-05-12","desc":"ΔΕΗ","amt":-80,"src":"checking"},{"date":"16 May 2025","k":"2025-05-16","desc":"SKLAVENITIS","amt":-440,"src":"checking"},{"date":"22 May 2025","k":"2025-05-22","desc":"CAFE NUMERO","amt":-320,"src":"checking"},{"date":"27 May 2025","k":"2025-05-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-06":[{"date":"01 June 2025","k":"2025-06-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 June 2025","k":"2025-06-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 June 2025","k":"2025-06-12","desc":"ΕΥΔΑΠ","amt":-70,"src":"checking"},{"date":"16 June 2025","k":"2025-06-16","desc":"SUPERMARKET ALFA","amt":-400,"src":"checking"},{"date":"22 June 2025","k":"2025-06-22","desc":"PUBLIC BOOKS","amt":-340,"src":"checking"},{"date":"27 June 2025","k":"2025-06-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"30 June 2025","k":"2025-06-30","desc":"ΤΟΚΟΙ ΚΑΤΑΘΕΣΕΩΝ","amt":200,"src":"savings"}],"2025-07":[{"date":"01 July 2025","k":"2025-07-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 July 2025","k":"2025-07-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 July 2025","k":"2025-07-12","desc":"ΔΕΗ","amt":-60,"src":"checking"},{"date":"16 July 2025","k":"2025-07-16","desc":"LIDL ATHENS","amt":-400,"src":"checking"},{"date":"22 July 2025","k":"2025-07-22","desc":"CINEMA VILLAGE","amt":-420,"src":"checking"},{"date":"27 July 2025","k":"2025-07-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"03 July 2025","k":"2025-07-03","desc":"SUPERMARKET ALFA","cat":"Supermarket / Διατροφή","amt":-50,"src":"checking"},{"date":"10 July 2025","k":"2025-07-10","desc":"CAFE NUMERO","cat":"Λοιπές δαπάνες και πληρωμές","amt":-20,"src":"checking"},{"date":"14 July 2025","k":"2025-07-14","desc":"ELECTRONICS STORE *","cat":"Λοιπές δαπάνες και πληρωμές","amt":-150,"src":"checking"},{"date":"15 July 2025","k":"2025-07-15","desc":"VISA LEFTOVERS","amt":-80,"src":"checking"}],"2025-08":[{"date":"01 August 2025","k":"2025-08-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 August 2025","k":"2025-08-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 August 2025","k":"2025-08-12","desc":"ΕΥΔΑΠ","amt":-60,"src":"checking"},{"date":"16 August 2025","k":"2025-08-16","desc":"ΑΒ ΒΑΣΙΛΟΠΟΥΛΟΣ","amt":-380,"src":"checking"},{"date":"22 August 2025","k":"2025-08-22","desc":"RESTAURANT TO STEKI","amt":-480,"src":"checking"},{"date":"27 August 2025","k":"2025-08-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-09":[{"date":"01 September 2025","k":"2025-09-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 September 2025","k":"2025-09-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 September 2025","k":"2025-09-12","desc":"ΔΕΗ","amt":-90,"src":"checking"},{"date":"16 September 2025","k":"2025-09-16","desc":"SKLAVENITIS","amt":-400,"src":"checking"},{"date":"22 September 2025","k":"2025-09-22","desc":"CAFE NUMERO","amt":-300,"src":"checking"},{"date":"27 September 2025","k":"2025-09-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"30 September 2025","k":"2025-09-30","desc":"ΤΟΚΟΙ ΚΑΤΑΘΕΣΕΩΝ","amt":205,"src":"savings"}],"2025-10":[{"date":"01 October 2025","k":"2025-10-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 October 2025","k":"2025-10-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 October 2025","k":"2025-10-12","desc":"ΕΥΔΑΠ","amt":-110,"src":"checking"},{"date":"16 October 2025","k":"2025-10-16","desc":"SUPERMARKET ALFA","amt":-400,"src":"checking"},{"date":"22 October 2025","k":"2025-10-22","desc":"PUBLIC BOOKS","amt":-250,"src":"checking"},{"date":"27 October 2025","k":"2025-10-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-11":[{"date":"01 November 2025","k":"2025-11-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 November 2025","k":"2025-11-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 November 2025","k":"2025-11-12","desc":"ΔΕΗ","amt":-140,"src":"checking"},{"date":"16 November 2025","k":"2025-11-16","desc":"LIDL ATHENS","amt":-420,"src":"checking"},{"date":"22 November 2025","k":"2025-11-22","desc":"CINEMA VILLAGE","amt":-270,"src":"checking"},{"date":"27 November 2025","k":"2025-11-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-12":[{"date":"01 December 2025","k":"2025-12-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 December 2025","k":"2025-12-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 December 2025","k":"2025-12-12","desc":"ΕΥΔΑΠ","amt":-150,"src":"checking"},{"date":"15 December 2025","k":"2025-12-15","desc":"ΔΩΡΟ ΧΡΙΣΤΟΥΓΕΝΝΩΝ ACME LTD","amt":1600,"src":"checking"},{"date":"16 December 2025","k":"2025-12-16","desc":"ΑΒ ΒΑΣΙΛΟΠΟΥΛΟΣ","amt":-350,"src":"checking"},{"date":"20 December 2025","k":"2025-12-20","desc":"ΔΩΡΑ ΕΟΡΤΩΝ","amt":-500,"src":"checking"},{"date":"22 December 2025","k":"2025-12-22","desc":"RESTAURANT TO STEKI","amt":-380,"src":"checking"},{"date":"27 December 2025","k":"2025-12-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"31 December 2025","k":"2025-12-31","desc":"ΤΟΚΟΙ ΚΑΤΑΘΕΣΕΩΝ","amt":210,"src":"savings"}]}};</script>
+<script>window.FIN = {"acct":{"2025-01":[{"src":"checking","inc":1600,"exp":1420}],"2025-02":[{"src":"checking","inc":1600,"exp":1380}],"2025-03":[{"src":"checking","inc":1600,"exp":1460},{"src":"savings","inc":185,"exp":0}],"2025-04":[{"src":"checking","inc":1600,"exp":1410}],"2025-05":[{"src":"checking","inc":1600,"exp":1480}],"2025-06":[{"src":"checking","inc":1600,"exp":1450},{"src":"savings","inc":200,"exp":0}],"2025-07":[{"src":"checking","inc":1600,"exp":1827.5}],"2025-08":[{"src":"checking","inc":1600,"exp":1560}],"2025-09":[{"src":"checking","inc":1600,"exp":1430},{"src":"savings","inc":205,"exp":0}],"2025-10":[{"src":"checking","inc":1600,"exp":1400}],"2025-11":[{"src":"checking","inc":1600,"exp":1523}],"2025-12":[{"src":"checking","inc":3200,"exp":2204.5},{"src":"savings","inc":210,"exp":0}]},"months":[{"label":"January 2025","short":"Jan","income":1600,"expenses":1420,"savings":180,"rate":0.1125},{"label":"February 2025","short":"Feb","income":1600,"expenses":1380,"savings":220,"rate":0.1375},{"label":"March 2025","short":"Mar","income":1785,"expenses":1460,"savings":325,"rate":0.18207282913165265},{"label":"April 2025","short":"Apr","income":1600,"expenses":1410,"savings":190,"rate":0.11875},{"label":"May 2025","short":"May","income":1600,"expenses":1480,"savings":120,"rate":0.075},{"label":"June 2025","short":"Jun","income":1800,"expenses":1450,"savings":350,"rate":0.19444444444444445},{"label":"July 2025","short":"Jul","income":1600,"expenses":1827.5,"savings":-227.5,"rate":-0.1421875},{"label":"August 2025","short":"Aug","income":1600,"expenses":1560,"savings":40,"rate":0.025},{"label":"September 2025","short":"Sep","income":1805,"expenses":1430,"savings":375,"rate":0.2077562326869806},{"label":"October 2025","short":"Oct","income":1600,"expenses":1400,"savings":200,"rate":0.125},{"label":"November 2025","short":"Nov","income":1600,"expenses":1523,"savings":77,"rate":0.048125},{"label":"December 2025","short":"Dec","income":3410,"expenses":2204.5,"savings":1205.5,"rate":0.3535190615835777}],"tx":{"2025-01":[{"date":"01 January 2025","k":"2025-01-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 January 2025","k":"2025-01-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 January 2025","k":"2025-01-12","desc":"ΔΕΗ","amt":-130,"src":"checking"},{"date":"16 January 2025","k":"2025-01-16","desc":"SKLAVENITIS","amt":-450,"src":"checking"},{"date":"22 January 2025","k":"2025-01-22","desc":"CAFE NUMERO","amt":-200,"src":"checking"},{"date":"27 January 2025","k":"2025-01-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-02":[{"date":"01 February 2025","k":"2025-02-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 February 2025","k":"2025-02-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 February 2025","k":"2025-02-12","desc":"ΕΥΔΑΠ","amt":-140,"src":"checking"},{"date":"16 February 2025","k":"2025-02-16","desc":"SUPERMARKET ALFA","amt":-440,"src":"checking"},{"date":"22 February 2025","k":"2025-02-22","desc":"PUBLIC BOOKS","amt":-160,"src":"checking"},{"date":"27 February 2025","k":"2025-02-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-03":[{"date":"01 March 2025","k":"2025-03-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 March 2025","k":"2025-03-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 March 2025","k":"2025-03-12","desc":"ΔΕΗ","amt":-120,"src":"checking"},{"date":"16 March 2025","k":"2025-03-16","desc":"LIDL ATHENS","amt":-400,"src":"checking"},{"date":"22 March 2025","k":"2025-03-22","desc":"CINEMA VILLAGE","amt":-300,"src":"checking"},{"date":"27 March 2025","k":"2025-03-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"31 March 2025","k":"2025-03-31","desc":"ΤΟΚΟΙ ΚΑΤΑΘΕΣΕΩΝ","amt":185,"src":"savings"}],"2025-04":[{"date":"01 April 2025","k":"2025-04-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 April 2025","k":"2025-04-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 April 2025","k":"2025-04-12","desc":"ΕΥΔΑΠ","amt":-90,"src":"checking"},{"date":"16 April 2025","k":"2025-04-16","desc":"ΑΒ ΒΑΣΙΛΟΠΟΥΛΟΣ","amt":-400,"src":"checking"},{"date":"22 April 2025","k":"2025-04-22","desc":"RESTAURANT TO STEKI","amt":-280,"src":"checking"},{"date":"27 April 2025","k":"2025-04-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-05":[{"date":"01 May 2025","k":"2025-05-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 May 2025","k":"2025-05-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 May 2025","k":"2025-05-12","desc":"ΔΕΗ","amt":-80,"src":"checking"},{"date":"16 May 2025","k":"2025-05-16","desc":"SKLAVENITIS","amt":-440,"src":"checking"},{"date":"22 May 2025","k":"2025-05-22","desc":"CAFE NUMERO","amt":-320,"src":"checking"},{"date":"27 May 2025","k":"2025-05-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-06":[{"date":"01 June 2025","k":"2025-06-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 June 2025","k":"2025-06-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 June 2025","k":"2025-06-12","desc":"ΕΥΔΑΠ","amt":-70,"src":"checking"},{"date":"16 June 2025","k":"2025-06-16","desc":"SUPERMARKET ALFA","amt":-400,"src":"checking"},{"date":"22 June 2025","k":"2025-06-22","desc":"PUBLIC BOOKS","amt":-340,"src":"checking"},{"date":"27 June 2025","k":"2025-06-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"30 June 2025","k":"2025-06-30","desc":"ΤΟΚΟΙ ΚΑΤΑΘΕΣΕΩΝ","amt":200,"src":"savings"}],"2025-07":[{"date":"01 July 2025","k":"2025-07-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 July 2025","k":"2025-07-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 July 2025","k":"2025-07-12","desc":"ΔΕΗ","amt":-60,"src":"checking"},{"date":"16 July 2025","k":"2025-07-16","desc":"LIDL ATHENS","amt":-400,"src":"checking"},{"date":"22 July 2025","k":"2025-07-22","desc":"CINEMA VILLAGE","amt":-420,"src":"checking"},{"date":"27 July 2025","k":"2025-07-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"16 July 2025","k":"2025-07-16","desc":"CAFE NUMERO","amt":-7.5,"src":"checking"},{"date":"03 July 2025","k":"2025-07-03","desc":"SUPERMARKET ALFA","cat":"Supermarket / Διατροφή","amt":-50,"src":"checking"},{"date":"10 July 2025","k":"2025-07-10","desc":"CAFE NUMERO","cat":"Λοιπές δαπάνες και πληρωμές","amt":-20,"src":"checking"},{"date":"14 July 2025","k":"2025-07-14","desc":"ELECTRONICS STORE *","cat":"Λοιπές δαπάνες και πληρωμές","amt":-150,"src":"checking"},{"date":"15 July 2025","k":"2025-07-15","desc":"VISA LEFTOVERS","amt":-80,"src":"checking"}],"2025-08":[{"date":"01 August 2025","k":"2025-08-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 August 2025","k":"2025-08-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 August 2025","k":"2025-08-12","desc":"ΕΥΔΑΠ","amt":-60,"src":"checking"},{"date":"16 August 2025","k":"2025-08-16","desc":"ΑΒ ΒΑΣΙΛΟΠΟΥΛΟΣ","amt":-380,"src":"checking"},{"date":"22 August 2025","k":"2025-08-22","desc":"RESTAURANT TO STEKI","amt":-480,"src":"checking"},{"date":"27 August 2025","k":"2025-08-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-09":[{"date":"01 September 2025","k":"2025-09-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 September 2025","k":"2025-09-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 September 2025","k":"2025-09-12","desc":"ΔΕΗ","amt":-90,"src":"checking"},{"date":"16 September 2025","k":"2025-09-16","desc":"SKLAVENITIS","amt":-400,"src":"checking"},{"date":"22 September 2025","k":"2025-09-22","desc":"CAFE NUMERO","amt":-300,"src":"checking"},{"date":"27 September 2025","k":"2025-09-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"30 September 2025","k":"2025-09-30","desc":"ΤΟΚΟΙ ΚΑΤΑΘΕΣΕΩΝ","amt":205,"src":"savings"}],"2025-10":[{"date":"01 October 2025","k":"2025-10-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 October 2025","k":"2025-10-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 October 2025","k":"2025-10-12","desc":"ΕΥΔΑΠ","amt":-110,"src":"checking"},{"date":"16 October 2025","k":"2025-10-16","desc":"SUPERMARKET ALFA","amt":-400,"src":"checking"},{"date":"22 October 2025","k":"2025-10-22","desc":"PUBLIC BOOKS","amt":-250,"src":"checking"},{"date":"27 October 2025","k":"2025-10-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"}],"2025-11":[{"date":"01 November 2025","k":"2025-11-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 November 2025","k":"2025-11-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 November 2025","k":"2025-11-12","desc":"ΔΕΗ","amt":-140,"src":"checking"},{"date":"16 November 2025","k":"2025-11-16","desc":"LIDL ATHENS","amt":-420,"src":"checking"},{"date":"22 November 2025","k":"2025-11-22","desc":"CINEMA VILLAGE","amt":-270,"src":"checking"},{"date":"27 November 2025","k":"2025-11-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"16 November 2025","k":"2025-11-16","desc":"PUBLIC BOOKSTORE","amt":-18,"src":"checking"},{"date":"16 November 2025","k":"2025-11-16","desc":"SKROUTZ ONLINE","amt":-35,"src":"checking"}],"2025-12":[{"date":"01 December 2025","k":"2025-12-01","desc":"ΕΝΟΙΚΙΟ","amt":-600,"src":"checking"},{"date":"08 December 2025","k":"2025-12-08","desc":"COSMOTE","amt":-40,"src":"checking"},{"date":"12 December 2025","k":"2025-12-12","desc":"ΕΥΔΑΠ","amt":-150,"src":"checking"},{"date":"15 December 2025","k":"2025-12-15","desc":"ΔΩΡΟ ΧΡΙΣΤΟΥΓΕΝΝΩΝ ACME LTD","amt":1600,"src":"checking"},{"date":"16 December 2025","k":"2025-12-16","desc":"ΑΒ ΒΑΣΙΛΟΠΟΥΛΟΣ","amt":-350,"src":"checking"},{"date":"20 December 2025","k":"2025-12-20","desc":"ΔΩΡΑ ΕΟΡΤΩΝ","amt":-500,"src":"checking"},{"date":"22 December 2025","k":"2025-12-22","desc":"RESTAURANT TO STEKI","amt":-380,"src":"checking"},{"date":"27 December 2025","k":"2025-12-27","desc":"ΜΙΣΘΟΔΟΣΙΑ ACME LTD","amt":1600,"src":"checking"},{"date":"16 December 2025","k":"2025-12-16","desc":"CAFE NUMERO","amt":-8.5,"src":"checking"},{"date":"16 December 2025","k":"2025-12-16","desc":"ΦΑΡΜΑΚΕΙΟ","amt":-24,"src":"checking"},{"date":"22 December 2025","k":"2025-12-22","desc":"PARKING CENTER","amt":-5,"src":"checking"},{"date":"31 December 2025","k":"2025-12-31","desc":"ΤΟΚΟΙ ΚΑΤΑΘΕΣΕΩΝ","amt":210,"src":"savings"},{"date":"16 December 2025","k":"2025-12-16","desc":"SUPERMARKET ALFA","cat":"Supermarket / Διατροφή","amt":-45,"src":"checking"},{"date":"16 December 2025","k":"2025-12-16","desc":"CAFE NUMERO","cat":"Λοιπές δαπάνες και πληρωμές","amt":-12,"src":"checking"},{"date":"20 December 2025","k":"2025-12-20","desc":"ELECTRONICS STORE","cat":"Λοιπές δαπάνες και πληρωμές","amt":-90,"src":"checking"}]}};</script>
 <script>
 (function () {
   var paper = document.getElementById('paper');
@@ -950,10 +960,15 @@ a:hover { color: var(--ink); }
   };
   var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
   
-  var shortDate = function (t) {
-    var parts = String(t.k || '').split('-');
-    if (parts.length === 3) return parts[2] + '/' + parts[1];
-    return t.date || '';
+  
+  var WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var dayLabel = function (k) {
+    var p = String(k || '').split('-');
+    if (p.length !== 3) return k || '';
+    var y = +p[0], m = +p[1], d = +p[2];
+    var wd = new Date(y, m - 1, d).getDay();
+    return WD[wd] + ' ' + d + ' ' + MO[m - 1];
   };
 
   var renderSelbar = function () {
@@ -974,25 +989,42 @@ a:hover { color: var(--ink); }
   var clearSel = function () { selected.clear(); renderRows(); renderSelbar(); };
 
   var renderRows = function () {
-    var sorted = rows.slice().sort(function (a, b) {
+    
+    var byDay = {}, dayKeys = [];
+    rows.forEach(function (t) {
+      var d = t.k || '';
+      if (!byDay[d]) { byDay[d] = []; dayKeys.push(d); }
+      byDay[d].push(t);
+    });
+    
+    dayKeys.sort(function (a, b) { return a < b ? 1 : a > b ? -1 : 0; });
+    
+    
+    var withinSort = sort.key && sort.key !== 'k';
+    var cmp = function (a, b) {
       var av = a[sort.key], bv = b[sort.key], c;
       if (sort.key === 'amt') { c = av > bv ? 1 : av < bv ? -1 : 0; }
       else { c = String(av).localeCompare(String(bv)); }
       return sort.dir === 'asc' ? c : -c;
-    });
-    var html = '';
-    sorted.forEach(function (t) {
-      var cls = t.amt < 0 ? 'neg' : 'pos';
-      var cat = t.cat ? ' <span class="tx-cat">' + esc(t.cat) + '</span>' : '';
-      html += '<tr class="tx-r' + (selected.has(t) ? ' sel' : '') + '" aria-pressed="' + (selected.has(t) ? 'true' : 'false') + '">' +
-              '<td class="l" title="' + esc(t.date) + '">' + esc(shortDate(t)) + '</td>' +
-              '<td class="l"><span class="tx-desc" title="' + esc(t.desc) + '">' + esc(t.desc) + '</span>' + cat + '</td>' +
-              '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
-              '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
+    };
+    var html = '', order = [];
+    dayKeys.forEach(function (d) {
+      var group = byDay[d];
+      if (withinSort) { group = group.slice().sort(cmp); }
+      html += '<tr class="tx-day"><td class="tx-day-cell" colspan="3">' + esc(dayLabel(d)) + '</td></tr>';
+      group.forEach(function (t) {
+        var cls = t.amt < 0 ? 'neg' : 'pos';
+        var cat = t.cat ? ' <span class="tx-cat">' + esc(t.cat) + '</span>' : '';
+        html += '<tr class="tx-r' + (selected.has(t) ? ' sel' : '') + '" aria-pressed="' + (selected.has(t) ? 'true' : 'false') + '">' +
+                '<td class="l"><span class="tx-desc" title="' + esc(t.desc) + '">' + esc(t.desc) + '</span>' + cat + '</td>' +
+                '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
+                '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
+        order.push(t);
+      });
     });
     bodyEl.innerHTML = html;
-    var trs = bodyEl.querySelectorAll('tr');
-    sorted.forEach(function (t, i) { trs[i]._tx = t; });
+    var trs = bodyEl.querySelectorAll('tr.tx-r');
+    order.forEach(function (t, i) { trs[i]._tx = t; });
     tableEl.querySelectorAll('th').forEach(function (th) {
       var on = th.getAttribute('data-key') === sort.key;
       th.classList.toggle('active', on);
@@ -1086,6 +1118,5 @@ a:hover { color: var(--ink); }
   });
 })();
 </script>
-
-
-</body></html>
+</body>
+</html>

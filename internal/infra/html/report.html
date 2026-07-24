@@ -317,7 +317,8 @@ a:hover { color: var(--ink); }
   .avg-row { grid-template-columns: 1fr; }
   .avg { padding: 14px 16px; }
   .table-block { padding: 16px 14px 8px; }
-  .ledger-table th, .ledger-table td { padding: 10px 8px; font-size: 12.5px; }
+  .ledger-table th, .ledger-table td { padding: 10px 3px; font-size: 12.5px; }
+  .ledger-table th:first-child, .ledger-table td:first-child { padding-left: 0; }
   .rate-bar { display: none; }
   /* monthly breakdown: drop Expenses & Savings cols so it fits without scrolling — keep Month / Income / Rate */
   .ledger-table th:nth-child(3), .ledger-table td:nth-child(3),
@@ -344,15 +345,15 @@ a:hover { color: var(--ink); }
   .tx-accounts { padding: 10px 16px 12px; }
   .tx-scroll { overflow: auto; }
   .tx-table th, .tx-table td { padding: 9px 4px; }
-  /* Date collapses to its content; Description absorbs all slack so it sits right
-     after the date instead of leaving a wide gap between the two columns */
-  .tx-table th:first-child, .tx-table td:first-child { padding-left: 12px; width: 1%; }
-  .tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: 100%; }
-  .tx-table th:nth-child(3), .tx-table td:nth-child(3) { padding-right: 12px; }
+  /* Description absorbs all slack; Amount pinned to its content on the right */
+  .tx-table th:first-child, .tx-table td:first-child { padding-left: 6px; width: 100%; }
+  .tx-table th:nth-child(2), .tx-table td:nth-child(2) { width: 1px; padding-right: 12px; }
   .tx-table th { font-size: 9.5px; }
   .tx-table td { font-size: 12.5px; }
   /* drop the Source column on mobile — least essential detail */
-  .tx-table th:nth-child(4), .tx-table td:nth-child(4) { display: none; }
+  .tx-table th:nth-child(3), .tx-table td:nth-child(3) { display: none; }
+  /* tighter day-group header to match the shorter mobile column header */
+  .tx-table tr.tx-day td.tx-day-cell { padding: 9px 6px 5px; top: 32px; }
   /* keep long descriptions from blowing out the row */
   .tx-desc {
     display: inline-block; max-width: 46vw; overflow: hidden;
@@ -435,7 +436,16 @@ a:hover { color: var(--ink); }
 }
 .tx-table td.r { text-align: right; }
 .tx-table td.l { text-align: left; }
-.tx-table th:first-child, .tx-table td:first-child { white-space: nowrap; }
+/* Amount column pinned to its content (no wrap); Description absorbs the slack */
+.tx-table th:nth-child(2), .tx-table td:nth-child(2) { white-space: nowrap; }
+/* day group-header row: spans the table, sticky under the column header */
+.tx-table tr.tx-day { cursor: default; }
+.tx-table tr.tx-day td.tx-day-cell {
+  font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 12px 26px 7px; border-bottom: 1px solid var(--rule);
+  background: var(--panel2); position: sticky; top: 37px; z-index: 1;
+}
 .tx-table tbody tr { cursor: pointer; user-select: none; transition: background .12s; }
 .tx-table tbody tr:hover { background: var(--panel2); }
 .tx-table tbody tr.sel { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
@@ -626,7 +636,6 @@ a:hover { color: var(--ink); }
         <table class="tx-table" id="tx-table">
           <thead>
             <tr>
-              <th class="l active" data-key="k"><span class="th-in">Date<span class="sort-arrow show">▼</span></span></th>
               <th class="l" data-key="desc"><span class="th-in">Description<span class="sort-arrow">▼</span></span></th>
               <th class="r" data-key="amt"><span class="th-in">Amount<span class="sort-arrow">▼</span></span></th>
               <th class="l" data-key="src"><span class="th-in">Source<span class="sort-arrow">▼</span></span></th>
@@ -864,11 +873,16 @@ a:hover { color: var(--ink); }
     return (v < 0 ? '−€' : '€') + Math.abs(v).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
   var esc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
-  // compact day/month — derive "12/05" from the "2026-05-12" sort key
-  var shortDate = function (t) {
-    var parts = String(t.k || '').split('-');
-    if (parts.length === 3) return parts[2] + '/' + parts[1];
-    return t.date || '';
+  // day-group label — derive "Mon 12 May" from the "2026-05-12" sort key.
+  // built from parsed parts (local Date, day/month only) so there's no timezone drift.
+  var WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var dayLabel = function (k) {
+    var p = String(k || '').split('-');
+    if (p.length !== 3) return k || '';
+    var y = +p[0], m = +p[1], d = +p[2];
+    var wd = new Date(y, m - 1, d).getDay();
+    return WD[wd] + ' ' + d + ' ' + MO[m - 1];
   };
 
   var renderSelbar = function () {
@@ -889,25 +903,42 @@ a:hover { color: var(--ink); }
   var clearSel = function () { selected.clear(); renderRows(); renderSelbar(); };
 
   var renderRows = function () {
-    var sorted = rows.slice().sort(function (a, b) {
+    // group transactions by day (k = "YYYY-MM-DD"), preserving first-seen order per day
+    var byDay = {}, dayKeys = [];
+    rows.forEach(function (t) {
+      var d = t.k || '';
+      if (!byDay[d]) { byDay[d] = []; dayKeys.push(d); }
+      byDay[d].push(t);
+    });
+    // day groups newest-first (fixed)
+    dayKeys.sort(function (a, b) { return a < b ? 1 : a > b ? -1 : 0; });
+    // within-day sort: active only when a column header is chosen ('desc'|'amt'|'src');
+    // default key 'k' leaves rows in incoming order and highlights no column
+    var withinSort = sort.key && sort.key !== 'k';
+    var cmp = function (a, b) {
       var av = a[sort.key], bv = b[sort.key], c;
       if (sort.key === 'amt') { c = av > bv ? 1 : av < bv ? -1 : 0; }
       else { c = String(av).localeCompare(String(bv)); }
       return sort.dir === 'asc' ? c : -c;
-    });
-    var html = '';
-    sorted.forEach(function (t) {
-      var cls = t.amt < 0 ? 'neg' : 'pos';
-      var cat = t.cat ? ' <span class="tx-cat">' + esc(t.cat) + '</span>' : '';
-      html += '<tr class="tx-r' + (selected.has(t) ? ' sel' : '') + '" aria-pressed="' + (selected.has(t) ? 'true' : 'false') + '">' +
-              '<td class="l" title="' + esc(t.date) + '">' + esc(shortDate(t)) + '</td>' +
-              '<td class="l"><span class="tx-desc" title="' + esc(t.desc) + '">' + esc(t.desc) + '</span>' + cat + '</td>' +
-              '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
-              '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
+    };
+    var html = '', order = [];
+    dayKeys.forEach(function (d) {
+      var group = byDay[d];
+      if (withinSort) { group = group.slice().sort(cmp); }
+      html += '<tr class="tx-day"><td class="tx-day-cell" colspan="3">' + esc(dayLabel(d)) + '</td></tr>';
+      group.forEach(function (t) {
+        var cls = t.amt < 0 ? 'neg' : 'pos';
+        var cat = t.cat ? ' <span class="tx-cat">' + esc(t.cat) + '</span>' : '';
+        html += '<tr class="tx-r' + (selected.has(t) ? ' sel' : '') + '" aria-pressed="' + (selected.has(t) ? 'true' : 'false') + '">' +
+                '<td class="l"><span class="tx-desc" title="' + esc(t.desc) + '">' + esc(t.desc) + '</span>' + cat + '</td>' +
+                '<td class="r tx-amt ' + cls + '">' + eu(t.amt) + '</td>' +
+                '<td class="l tx-src">' + esc(t.src) + '</td></tr>';
+        order.push(t);
+      });
     });
     bodyEl.innerHTML = html;
-    var trs = bodyEl.querySelectorAll('tr');
-    sorted.forEach(function (t, i) { trs[i]._tx = t; });
+    var trs = bodyEl.querySelectorAll('tr.tx-r');
+    order.forEach(function (t, i) { trs[i]._tx = t; });
     tableEl.querySelectorAll('th').forEach(function (th) {
       var on = th.getAttribute('data-key') === sort.key;
       th.classList.toggle('active', on);
