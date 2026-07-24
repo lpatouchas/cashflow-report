@@ -165,6 +165,8 @@ a:hover { color: var(--ink); }
 .chart-wrap { position: relative; width: 100%; }
 .chart { width: 100%; height: auto; display: block; aspect-ratio: 1000 / 440; overflow: visible; }
 .grid { stroke: var(--rule); stroke-width: 1; }
+.zero-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; opacity: .55; }
+.zero-label { font-family: var(--mono); font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
 .axis-y, .axis-x {
   font-family: var(--mono); font-size: 12px; fill: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -746,7 +748,8 @@ a:hover { color: var(--ink); }
     active.forEach(function (s) { M.forEach(function (m) { lo = Math.min(lo, m[s.key]); hi = Math.max(hi, m[s.key]); }); });
     if (!isFinite(lo)) { lo = 0; hi = 1; }
     var span = (hi - lo) || 1;
-    lo = Math.max(0, lo - span * 0.18);
+    var loPad = lo - span * 0.18;
+    lo = lo < 0 ? loPad : Math.max(0, loPad);
     hi = hi + span * 0.18;
 
     var x = function (i) { return PAD.l + (M.length === 1 ? iw / 2 : (i / (M.length - 1)) * iw); };
@@ -765,6 +768,11 @@ a:hover { color: var(--ink); }
       svg += '<line class="grid" x1="' + PAD.l + '" x2="' + (W - PAD.r) + '" y1="' + y(g).toFixed(1) + '" y2="' + y(g).toFixed(1) + '"/>';
       svg += '<text class="axis-y" x="' + (PAD.l - 12) + '" y="' + (y(g) + 4).toFixed(1) + '" text-anchor="end">€' + Math.round(g).toLocaleString('de-DE') + '</text>';
     });
+    if (lo < 0 && hi > 0) {
+      var zy = y(0).toFixed(1);
+      svg += '<line class="zero-line" x1="' + PAD.l + '" x2="' + (W - PAD.r) + '" y1="' + zy + '" y2="' + zy + '"/>';
+      svg += '<text class="zero-label" x="' + (W - PAD.r + 6) + '" y="' + (y(0) + 4).toFixed(1) + '" text-anchor="start">0</text>';
+    }
     var labelStep = (window.innerWidth <= 680 && M.length > 6) ? Math.ceil(M.length / 6) : 1;
     M.forEach(function (m, i) {
       if (i % labelStep !== 0 && i !== M.length - 1) return;
@@ -903,6 +911,9 @@ a:hover { color: var(--ink); }
   var clearSel = function () { selected.clear(); renderRows(); renderSelbar(); };
 
   var renderRows = function () {
+    // TODO(refactor): day-grouping currently lives in this UI layer. It should be
+    // moved to the backend (Go) layer in a future refactor so the report ships
+    // pre-grouped data and the client only renders it.
     // group transactions by day (k = "YYYY-MM-DD"), preserving first-seen order per day
     var byDay = {}, dayKeys = [];
     rows.forEach(function (t) {

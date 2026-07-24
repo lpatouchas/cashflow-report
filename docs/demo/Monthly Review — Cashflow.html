@@ -7,7 +7,7 @@
 <title>Monthly Review — Cashflow</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="Monthly%20Review%20—%20Cashflow_files/css2" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --sans: 'Space Grotesk', system-ui, sans-serif;
@@ -165,6 +165,8 @@ a:hover { color: var(--ink); }
 .chart-wrap { position: relative; width: 100%; }
 .chart { width: 100%; height: auto; display: block; aspect-ratio: 1000 / 440; overflow: visible; }
 .grid { stroke: var(--rule); stroke-width: 1; }
+.zero-line { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 4; opacity: .55; }
+.zero-label { font-family: var(--mono); font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
 .axis-y, .axis-x {
   font-family: var(--mono); font-size: 12px; fill: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -509,7 +511,7 @@ a:hover { color: var(--ink); }
       <div class="mast-rule">
         <span>Vol. I</span>
         <span>A statement of income, outflow &amp; savings</span>
-        <span>Generated 24 July 2026 · 15:31</span>
+        <span>Generated 24 July 2026 · 15:43</span>
       </div>
     </header>
 
@@ -832,7 +834,8 @@ a:hover { color: var(--ink); }
     active.forEach(function (s) { M.forEach(function (m) { lo = Math.min(lo, m[s.key]); hi = Math.max(hi, m[s.key]); }); });
     if (!isFinite(lo)) { lo = 0; hi = 1; }
     var span = (hi - lo) || 1;
-    lo = Math.max(0, lo - span * 0.18);
+    var loPad = lo - span * 0.18;
+    lo = lo < 0 ? loPad : Math.max(0, loPad);
     hi = hi + span * 0.18;
 
     var x = function (i) { return PAD.l + (M.length === 1 ? iw / 2 : (i / (M.length - 1)) * iw); };
@@ -851,6 +854,11 @@ a:hover { color: var(--ink); }
       svg += '<line class="grid" x1="' + PAD.l + '" x2="' + (W - PAD.r) + '" y1="' + y(g).toFixed(1) + '" y2="' + y(g).toFixed(1) + '"/>';
       svg += '<text class="axis-y" x="' + (PAD.l - 12) + '" y="' + (y(g) + 4).toFixed(1) + '" text-anchor="end">€' + Math.round(g).toLocaleString('de-DE') + '</text>';
     });
+    if (lo < 0 && hi > 0) {
+      var zy = y(0).toFixed(1);
+      svg += '<line class="zero-line" x1="' + PAD.l + '" x2="' + (W - PAD.r) + '" y1="' + zy + '" y2="' + zy + '"/>';
+      svg += '<text class="zero-label" x="' + (W - PAD.r + 6) + '" y="' + (y(0) + 4).toFixed(1) + '" text-anchor="start">0</text>';
+    }
     var labelStep = (window.innerWidth <= 680 && M.length > 6) ? Math.ceil(M.length / 6) : 1;
     M.forEach(function (m, i) {
       if (i % labelStep !== 0 && i !== M.length - 1) return;
